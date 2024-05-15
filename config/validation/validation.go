@@ -1,15 +1,11 @@
-// Copyright 2022 Lingfei Kong <colin404@foxmail.com>. All rights reserved.
-// Use of this source code is governed by a MIT style
-// license that can be found in the LICENSE file. The original repo for
-// this file is https://github.com/superproj/onex.
-//
+// Copyright 2024 eve.  All rights reserved.
 
 package validation
 
 import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 
-	"github.com/snail-plus/gopkg/config"
+	"gitee.com/eve_3/gopkg/config"
 )
 
 // ValidateMySQLConfiguration ensures validation of the MySQLConfiguration struct.

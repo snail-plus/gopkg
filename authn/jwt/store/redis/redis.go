@@ -1,8 +1,4 @@
-// Copyright 2022 Lingfei Kong <colin404@foxmail.com>. All rights reserved.
-// Use of this source code is governed by a MIT style
-// license that can be found in the LICENSE file. The original repo for
-// this file is https://github.com/superproj/onex.
-//
+// Copyright 2024 eve.  All rights reserved.
 
 package redis
 
@@ -32,7 +28,7 @@ type Store struct {
 
 // NewStore create an *Store instance to handle token storage, deletion, and checking.
 func NewStore(cfg *Config) *Store {
-	// The reason `github.com/snail-plus/gopkg/db` is not used here is
+	// The reason `gitee.com/eve_3/gopkg/db` is not used here is
 	// to minimize dependencies, and use `github.com/redis/go-redis/v9` to
 	// create redis client is not complex.
 	cli := redis.NewClient(&redis.Options{

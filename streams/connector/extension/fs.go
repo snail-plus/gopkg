@@ -1,8 +1,4 @@
-// Copyright 2022 Lingfei Kong <colin404@foxmail.com>. All rights reserved.
-// Use of this source code is governed by a MIT style
-// license that can be found in the LICENSE file. The original repo for
-// this file is https://github.com/superproj/onex.
-//
+// Copyright 2024 eve.  All rights reserved.
 
 package extension
 
@@ -11,9 +7,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/snail-plus/gopkg/streams"
-	"github.com/snail-plus/gopkg/streams/flow"
-	"github.com/snail-plus/gopkg/streams/util/ospkg"
+	"gitee.com/eve_3/gopkg/streams"
+	"gitee.com/eve_3/gopkg/streams/flow"
+	"gitee.com/eve_3/gopkg/streams/util/ospkg"
 )
 
 // FileSource represents an inbound connector that reads items from a file.

@@ -1,8 +1,4 @@
-// Copyright 2022 Lingfei Kong <colin404@foxmail.com>. All rights reserved.
-// Use of this source code is governed by a MIT style
-// license that can be found in the LICENSE file. The original repo for
-// this file is https://github.com/superproj/onex.
-//
+// Copyright 2024 eve.  All rights reserved.
 
 package cache
 
@@ -10,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/snail-plus/gopkg/cache/store"
+	"gitee.com/eve_3/gopkg/cache/store"
 )
 
 // DelegateCache is a representative cache used to represent the store. By representing

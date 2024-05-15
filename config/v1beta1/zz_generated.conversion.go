@@ -14,7 +14,7 @@ import (
 	conversion "k8s.io/apimachinery/pkg/conversion"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 
-	config "github.com/snail-plus/gopkg/config"
+	config "gitee.com/eve_3/gopkg/config"
 )
 
 func init() {

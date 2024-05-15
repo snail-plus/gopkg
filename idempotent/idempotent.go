@@ -1,8 +1,4 @@
-// Copyright 2022 Lingfei Kong <colin404@foxmail.com>. All rights reserved.
-// Use of this source code is governed by a MIT style
-// license that can be found in the LICENSE file. The original repo for
-// this file is https://github.com/superproj/onex.
-//
+// Copyright 2024 eve.  All rights reserved.
 
 package idempotent
 
@@ -13,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/snail-plus/gopkg/log"
+	"gitee.com/eve_3/gopkg/log"
 )
 
 // redis lua script(read => delete => get delete flag).

@@ -1,8 +1,4 @@
-// Copyright 2022 Lingfei Kong <colin404@foxmail.com>. All rights reserved.
-// Use of this source code is governed by a MIT style
-// license that can be found in the LICENSE file. The original repo for
-// this file is https://github.com/superproj/onex.
-//
+// Copyright 2024 eve.  All rights reserved.
 
 package options
 
@@ -19,7 +15,7 @@ import (
 	"github.com/spf13/pflag"
 	"k8s.io/klog/v2"
 
-	stringsutil "github.com/snail-plus/gopkg/util/strings"
+	stringsutil "gitee.com/eve_3/gopkg/util/strings"
 )
 
 var _ IOptions = (*KafkaOptions)(nil)

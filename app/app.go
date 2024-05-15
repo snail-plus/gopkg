@@ -1,8 +1,4 @@
-// Copyright 2022 Lingfei Kong <colin404@foxmail.com>. All rights reserved.
-// Use of this source code is governed by a MIT style
-// license that can be found in the LICENSE file. The original repo for
-// this file is https://github.com/superproj/onex.
-//
+// Copyright 2024 eve.  All rights reserved.
 
 package app
 
@@ -19,9 +15,9 @@ import (
 	cliflag "k8s.io/component-base/cli/flag"
 	"k8s.io/component-base/term"
 
-	"github.com/snail-plus/gopkg/log"
-	genericoptions "github.com/snail-plus/gopkg/options"
-	"github.com/snail-plus/gopkg/version"
+	"gitee.com/eve_3/gopkg/log"
+	genericoptions "gitee.com/eve_3/gopkg/options"
+	"gitee.com/eve_3/gopkg/version"
 )
 
 // App is the main structure of a cli application.

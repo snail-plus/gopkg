@@ -1,14 +1,10 @@
-// Copyright 2022 Lingfei Kong <colin404@foxmail.com>. All rights reserved.
-// Use of this source code is governed by a MIT style
-// license that can be found in the LICENSE file. The original repo for
-// this file is https://github.com/superproj/onex.
-//
+// Copyright 2024 eve.  All rights reserved.
 
 // Package cache is a complete Go cache library that brings you
 // multiple ways of managing your caches.
 package cache
 
-//go:generate mockgen -destination mock_cache.go -package cache github.com/snail-plus/gopkg/cache KeyGetter
+//go:generate mockgen -destination mock_cache.go -package cache gitee.com/eve_3/gopkg/cache KeyGetter
 
 import (
 	"context"
