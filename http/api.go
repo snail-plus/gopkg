@@ -6,21 +6,21 @@ import (
 	"net/http"
 )
 
-type Response struct {
+type Response[T any] struct {
 	Code SystemErrCode `json:"code"`
 	Msg  string        `json:"msg"`
-	Data interface{}   `json:"data"`
+	Data T             `json:"data"`
 }
 
 type Api struct{}
 
 func (r Api) Success(c *gin.Context, data any) {
-	c.JSON(http.StatusOK, Response{Data: data, Code: SystemErrCodeSuccess})
+	c.JSON(http.StatusOK, Response[any]{Data: data, Code: SystemErrCodeSuccess})
 }
 
 func (r Api) Failure(c *gin.Context, err error) {
 	log.Infof("Failure: %v", err)
-	c.JSON(http.StatusOK, Response{
+	c.JSON(http.StatusOK, Response[any]{
 		Code: SystemErrCodeFailure,
 		Msg:  err.Error(),
 	})
