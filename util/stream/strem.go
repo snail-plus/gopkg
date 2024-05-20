@@ -359,6 +359,35 @@ func (s *Stream[T]) Max(key ...string) float64 {
 	return maxVal
 }
 
+// Min returns the min element in the stream.
+// NOTE: This is not truly lazy as it needs to consume the entire stream.
+func (s *Stream[T]) Min(key ...string) float64 {
+	slice := s.ToSlice()
+
+	if len(key) == 0 {
+		minVal := cast.ToFloat64(slice[0])
+		for _, k := range slice {
+			item := cast.ToFloat64(k)
+			if item < minVal {
+				minVal = item
+			}
+		}
+
+		return minVal
+	}
+
+	minVal := reflects.GetNumberField(slice[0], key[0])
+
+	for _, v := range slice[1:] {
+		item := reflects.GetNumberField(v, key[0])
+		if item < minVal {
+			minVal = item
+		}
+	}
+
+	return minVal
+}
+
 // Avg returns the maximum element in the stream.
 // NOTE: This is not truly lazy as it needs to consume the entire stream.
 func (s *Stream[T]) Avg(key ...string) float64 {
