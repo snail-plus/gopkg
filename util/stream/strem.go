@@ -388,6 +388,13 @@ func (s *Stream[T]) Min(key ...string) float64 {
 	return minVal
 }
 
+// Range returns the max - min value of the stream.
+func (s *Stream[T]) Range(key ...string) float64 {
+	maxVal := s.Max(key...)
+	minVal := s.Min(key...)
+	return maxVal - minVal
+}
+
 // Avg returns the maximum element in the stream.
 // NOTE: This is not truly lazy as it needs to consume the entire stream.
 func (s *Stream[T]) Avg(key ...string) float64 {
