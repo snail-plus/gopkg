@@ -12,3 +12,7 @@ func (r *PageRequest) AddParam(key string, value interface{}) {
 	}
 	r.Params[key] = value
 }
+
+func (r *PageRequest) Offset() int {
+	return (r.PageNum - 1) * r.PageSize
+}
