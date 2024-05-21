@@ -465,3 +465,11 @@ func (s *Stream[T]) Collect() []T {
 	}
 	return result
 }
+
+func ToMap[T any, K comparable](stream *Stream[T], keyFunc func(T) K) map[K]T {
+	result := make(map[K]T)
+	for v := range stream.ch {
+		result[keyFunc(v)] = v
+	}
+	return result
+}
