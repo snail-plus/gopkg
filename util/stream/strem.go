@@ -27,6 +27,10 @@ func NewStream[T any](data []T) *Stream[T] {
 	return &Stream[T]{ch: ch}
 }
 
+func New[T any](data ...T) *Stream[T] {
+	return NewStream(data)
+}
+
 func Generate[T any](f func() T) *Stream[T] {
 	ch := make(chan T)
 
@@ -37,6 +41,31 @@ func Generate[T any](f func() T) *Stream[T] {
 	}()
 
 	return &Stream[T]{ch: ch}
+}
+
+func Concat[T any](a Stream[T], b Stream[T]) *Stream[T] {
+	ch := make(chan T)
+
+	go func() {
+		slice1 := a.ToSlice()
+		for _, v1 := range slice1 {
+			ch <- v1
+		}
+
+		slice2 := b.ToSlice()
+		for _, v2 := range slice2 {
+			ch <- v2
+		}
+
+	}()
+
+	return &Stream[T]{ch: ch}
+}
+
+type Number interface {
+	int | int8 | int16 | int32 | int64 |
+		uint | uint8 | uint16 | uint32 | uint64 | uintptr |
+		float32 | float64 | complex64 | complex128
 }
 
 type MapperFunc[T, R any] func(T) []R
@@ -80,6 +109,81 @@ func FlatMap[T, R any](stream *Stream[T], mapper MapperFunc[T, R]) *Stream[R] {
 	return &Stream[R]{ch: outCh}
 }
 
+type ToIntFunc[T any] func(T) int
+
+func (s *Stream[T]) MapToInt(f ToIntFunc[T]) *Stream[int] {
+	ch := make(chan int)
+
+	go func() {
+		for v := range s.ch {
+			ch <- f(v)
+		}
+		close(ch)
+	}()
+
+	return &Stream[int]{ch: ch}
+}
+
+type ToInt32Func[T any] func(T) int32
+
+func (s *Stream[T]) MapToInt32(f ToInt32Func[T]) *Stream[int32] {
+	ch := make(chan int32)
+
+	go func() {
+		for v := range s.ch {
+			ch <- f(v)
+		}
+		close(ch)
+	}()
+
+	return &Stream[int32]{ch: ch}
+}
+
+type ToInt64Func[T any] func(T) int64
+
+func (s *Stream[T]) MapToInt64(f ToInt64Func[T]) *Stream[int64] {
+	ch := make(chan int64)
+
+	go func() {
+		for v := range s.ch {
+			ch <- f(v)
+		}
+		close(ch)
+	}()
+
+	return &Stream[int64]{ch: ch}
+}
+
+type ToFloat32Func[T any] func(T) float32
+
+func (s *Stream[T]) MapToFloat32(f ToFloat32Func[T]) *Stream[float32] {
+	ch := make(chan float32)
+
+	go func() {
+		for v := range s.ch {
+			ch <- f(v)
+		}
+		close(ch)
+	}()
+
+	return &Stream[float32]{ch: ch}
+}
+
+type ToFloat64Func[T any] func(T) float64
+
+func (s *Stream[T]) MapToFloat64(f ToFloat64Func[T]) *Stream[float64] {
+	ch := make(chan float64)
+
+	go func() {
+		for v := range s.ch {
+			ch <- f(v)
+		}
+		close(ch)
+	}()
+
+	return &Stream[float64]{ch: ch}
+}
+
 // Map applies the given function to each element lazily.
 func (s *Stream[T]) Map(f func(T) T) *Stream[T] {
 	ch := make(chan T)
@@ -87,6 +191,28 @@ func (s *Stream[T]) Map(f func(T) T) *Stream[T] {
 	go func() {
 		for v := range s.ch {
 			ch <- f(v)
+		}
+		close(ch)
+	}()
+
+	return &Stream[T]{ch: ch}
+}
+
+// ForEach applies the given function to each element lazily.
+func (s *Stream[T]) ForEach(f func(T)) {
+	for v := range s.ch {
+		f(v)
+	}
+}
+
+// Peek Returns a stream consisting of the elements of this stream, additionally performing the provided.
+func (s *Stream[T]) Peek(f func(T)) *Stream[T] {
+	ch := make(chan T)
+
+	go func() {
+		for v := range s.ch {
+			f(v)
+			ch <- v
 		}
 		close(ch)
 	}()
