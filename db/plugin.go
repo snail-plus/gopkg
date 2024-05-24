@@ -3,10 +3,10 @@
 package db
 
 import (
+	"gitee.com/eve_3/gopkg/log"
 	"time"
 
 	"gorm.io/gorm"
-	"k8s.io/klog/v2"
 )
 
 const (
@@ -60,5 +60,5 @@ func after(db *gorm.DB) {
 	if !ok {
 		return
 	}
-	klog.V(4).Infof("sql cost time: %fs", time.Since(ts).Seconds())
+	log.Infof("sql cost time: %fs", time.Since(ts).Seconds())
 }

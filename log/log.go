@@ -162,6 +162,14 @@ func Infof(format string, args ...any) {
 	std.Infof(format, args...)
 }
 
+func ErrorS(err error, format string, args ...any) {
+	std.Errorf(err.Error()+": "+format, args...)
+}
+
+func InfoS(format string, args ...any) {
+	std.Errorf(format, args...)
+}
+
 func (l *zapLogger) Infof(msg string, keyvals ...any) {
 	l.z.Sugar().Infof(msg, keyvals...)
 }

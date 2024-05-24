@@ -4,12 +4,12 @@ package kafka
 
 import (
 	"context"
+	"gitee.com/eve_3/gopkg/log"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/segmentio/kafka-go"
-	"k8s.io/klog/v2"
 
 	"gitee.com/eve_3/gopkg/streams"
 	"gitee.com/eve_3/gopkg/streams/flow"
@@ -60,7 +60,7 @@ func (ks *KafkaSource) consume() {
 		// the `ReadMessage` method blocks until we receive the next event
 		msg, err := ks.r.ReadMessage(ks.ctx)
 		if err != nil {
-			klog.ErrorS(err, "Failed to read message")
+			log.Errorf("Failed to read message, %v", err)
 		}
 		ks.out <- msg
 	}
@@ -108,11 +108,11 @@ func (ks *KafkaSink) init() {
 		case *kafka.Message:
 			km = *m
 		default:
-			klog.V(1).InfoS("Unsupported message type", "message", m)
+			log.Infof("Unsupported message type, message: %v", m)
 			continue
 		}
 		if err := ks.w.WriteMessages(ks.ctx, km); err != nil {
-			klog.ErrorS(err, "Failed to write message")
+			log.Errorf("Failed to write message， %v", err)
 		}
 	}
 

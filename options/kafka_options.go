@@ -4,18 +4,17 @@ package options
 
 import (
 	"fmt"
+	"gitee.com/eve_3/gopkg/log"
 	"strings"
 	"time"
 
+	stringsutil "gitee.com/eve_3/gopkg/util/strings"
 	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl"
 	"github.com/segmentio/kafka-go/sasl/plain"
 	"github.com/segmentio/kafka-go/sasl/scram"
 	"github.com/segmentio/kafka-go/snappy"
 	"github.com/spf13/pflag"
-	"k8s.io/klog/v2"
-
-	stringsutil "gitee.com/eve_3/gopkg/util/strings"
 )
 
 var _ IOptions = (*KafkaOptions)(nil)
@@ -25,7 +24,7 @@ type logger struct {
 }
 
 func (l *logger) Printf(format string, args ...any) {
-	klog.V(klog.Level(l.v)).Infof(format, args...)
+	log.Infof(format, args...)
 }
 
 type WriterOptions struct {

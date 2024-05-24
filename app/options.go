@@ -4,17 +4,15 @@ package app
 
 import (
 	"fmt"
+	"gitee.com/eve_3/gopkg/util/homedir"
 	"path/filepath"
 	"strings"
 
+	"gitee.com/eve_3/gopkg/log"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"k8s.io/client-go/util/homedir"
-	cliflag "k8s.io/component-base/cli/flag"
-
-	"gitee.com/eve_3/gopkg/log"
 )
 
 const configFlagName = "config"
@@ -22,8 +20,6 @@ const configFlagName = "config"
 // CliOptions abstracts configuration options for reading parameters from the
 // command line.
 type CliOptions interface {
-	// Flags returns flags for a specific server by section name.
-	Flags() cliflag.NamedFlagSets
 
 	// Complete completes all the required options.
 	Complete() error

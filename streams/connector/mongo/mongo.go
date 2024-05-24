@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"strconv"
 
+	klog "gitee.com/eve_3/gopkg/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"k8s.io/klog/v2"
 )
 
 type SinkConfig struct {
@@ -70,12 +70,12 @@ func (ms *MongoSink) capCollection() (ok bool) {
 	}
 
 	if exists {
-		klog.V(1).InfoS("Collection already exists. Capping could result in data loss. Ignoring", "collection", colName)
+		klog.InfoS("Collection already exists. Capping could result in data loss. Ignoring", "collection", colName)
 		return false
 	}
 
 	if strconv.IntSize < 64 {
-		klog.V(1).InfoS("Pump running < 64bit architecture. Not capping collection as max size would be 2gb")
+		klog.InfoS("Pump running < 64bit architecture. Not capping collection as max size would be 2gb")
 		return false
 	}
 

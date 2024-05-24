@@ -8,16 +8,12 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	_ "go.uber.org/automaxprocs"
-	"k8s.io/component-base/cli"
-	cliflag "k8s.io/component-base/cli/flag"
-	"k8s.io/component-base/term"
-
 	"gitee.com/eve_3/gopkg/log"
 	genericoptions "gitee.com/eve_3/gopkg/options"
 	"gitee.com/eve_3/gopkg/version"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	_ "go.uber.org/automaxprocs"
 )
 
 // App is the main structure of a cli application.
@@ -202,31 +198,17 @@ func (a *App) buildCommand() {
 	cmd.SetOut(os.Stdout)
 	cmd.SetErr(os.Stderr)
 	cmd.Flags().SortFlags = true
-
-	var fss cliflag.NamedFlagSets
-	if a.options != nil {
-		fss = a.options.Flags()
-	}
-
-	version.AddFlags(fss.FlagSet("global"))
-
-	if !a.noConfig {
-		AddConfigFlag(fss.FlagSet("global"), a.name, a.watch)
-	}
-
-	for _, f := range fss.FlagSets {
-		cmd.Flags().AddFlagSet(f)
-	}
-
-	cols, _, _ := term.TerminalSize(cmd.OutOrStdout())
-	cliflag.SetUsageAndHelpFunc(cmd, fss, cols)
-
 	a.cmd = cmd
 }
 
 // Run is used to launch the application.
 func (a *App) Run() {
-	os.Exit(cli.Run(a.cmd))
+	err := a.cmd.Execute()
+	if err != nil {
+		log.Errorw(err, "Application startup failed")
+		os.Exit(1)
+	}
+	os.Exit(0)
 }
 
 func (a *App) runCommand(cmd *cobra.Command, args []string) error {
@@ -263,7 +245,7 @@ func (a *App) runCommand(cmd *cobra.Command, args []string) error {
 		if !a.noConfig {
 			PrintConfig()
 		} else if a.options != nil {
-			cliflag.PrintFlags(cmd.Flags())
+			log.Infof("options: %v", cmd.Flags())
 		}
 	}
 

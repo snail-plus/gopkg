@@ -3,7 +3,7 @@
 package config
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"time"
 )
 
 // MySQLConfiguration defines the configuration of mysql
@@ -22,7 +22,7 @@ type MySQLConfiguration struct {
 	// Maximum open connections allowed to connect to mysql.
 	MaxOpenConnections int32
 	// Maximum connection life time allowed to connect to mysql.
-	MaxConnectionLifeTime metav1.Duration
+	MaxConnectionLifeTime time.Duration
 }
 
 // RedisConfiguration defines the configuration of redis
@@ -39,5 +39,5 @@ type RedisConfiguration struct {
 	// Maximum number of retries before giving up.
 	MaxRetries int
 	// Timeout when connecting to redis service.
-	Timeout metav1.Duration
+	Timeout time.Duration
 }
