@@ -2,7 +2,7 @@ package stream
 
 import (
 	"fmt"
-	"gitee.com/eve_3/gopkg/util/reflects"
+	"gitee.com/eve_3/gopkg/util/reflect"
 	"github.com/spf13/cast"
 	"math/rand"
 	"sort"
@@ -450,7 +450,7 @@ func (s *Stream[T]) Sum(key ...string) (sum float64) {
 		}
 	} else {
 		for _, item := range slice {
-			sum += reflects.GetNumberField(item, key[0])
+			sum += reflect.GetNumberField(item, key[0])
 		}
 	}
 	return
@@ -473,10 +473,10 @@ func (s *Stream[T]) Max(key ...string) float64 {
 		return maxVal
 	}
 
-	maxVal := reflects.GetNumberField(slice[0], key[0])
+	maxVal := reflect.GetNumberField(slice[0], key[0])
 
 	for _, v := range slice[1:] {
-		item := reflects.GetNumberField(v, key[0])
+		item := reflect.GetNumberField(v, key[0])
 		if item > maxVal {
 			maxVal = item
 		}
@@ -502,10 +502,10 @@ func (s *Stream[T]) Min(key ...string) float64 {
 		return minVal
 	}
 
-	minVal := reflects.GetNumberField(slice[0], key[0])
+	minVal := reflect.GetNumberField(slice[0], key[0])
 
 	for _, v := range slice[1:] {
-		item := reflects.GetNumberField(v, key[0])
+		item := reflect.GetNumberField(v, key[0])
 		if item < minVal {
 			minVal = item
 		}
@@ -535,7 +535,7 @@ func (s *Stream[T]) Avg(key ...string) float64 {
 		}
 	} else {
 		for _, v := range slice {
-			item := reflects.GetNumberField(v, key[0])
+			item := reflect.GetNumberField(v, key[0])
 			sum += item
 		}
 	}
