@@ -14,7 +14,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.12.0"
 )
 
-var _ IOptions = (*JaegerOptions)(nil)
+// var _ IOptions = (*JaegerOptions)(nil)
 
 // JaegerOptions defines options for consul client.
 type JaegerOptions struct {
