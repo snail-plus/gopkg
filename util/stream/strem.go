@@ -460,6 +460,9 @@ func (s *Stream[T]) Sum(key ...string) (sum float64) {
 // NOTE: This is not truly lazy as it needs to consume the entire stream.
 func (s *Stream[T]) Max(key ...string) float64 {
 	slice := s.ToSlice()
+	if slice == nil {
+		return 0
+	}
 
 	if len(key) == 0 {
 		maxVal := cast.ToFloat64(slice[0])
@@ -489,6 +492,9 @@ func (s *Stream[T]) Max(key ...string) float64 {
 // NOTE: This is not truly lazy as it needs to consume the entire stream.
 func (s *Stream[T]) Min(key ...string) float64 {
 	slice := s.ToSlice()
+	if slice == nil {
+		return 0
+	}
 
 	if len(key) == 0 {
 		minVal := cast.ToFloat64(slice[0])
