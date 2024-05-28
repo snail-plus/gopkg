@@ -150,6 +150,12 @@ func GetNumberField(obj any, key string) float64 {
 		}
 
 		return cast.ToFloat64(val)
+	case interface{}:
+		val, err := GetFieldValueByName(obj, key)
+		if err != nil {
+			return 0
+		}
+		return cast.ToFloat64(val)
 	default:
 		return 0
 	}
