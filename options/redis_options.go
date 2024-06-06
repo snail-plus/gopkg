@@ -5,7 +5,6 @@ package options
 import (
 	"time"
 
-	"github.com/redis/go-redis/extra/rediscensus/v9"
 	"github.com/redis/go-redis/v9"
 	"github.com/spf13/pflag"
 
@@ -99,11 +98,6 @@ func (o *RedisOptions) NewClient() (*redis.Client, error) {
 	rdb, err := db.NewRedis(opts)
 	if err != nil {
 		return nil, err
-	}
-
-	// hook tracing (using open telemetry)
-	if o.EnableTrace {
-		rdb.AddHook(rediscensus.NewTracingHook())
 	}
 
 	return rdb, nil

@@ -4,9 +4,9 @@ package jwt
 
 import (
 	"context"
+	"errors"
 	"time"
 
-	"github.com/go-kratos/kratos/v2/errors"
 	"github.com/golang-jwt/jwt/v4"
 	goi18n "github.com/nicksnyder/go-i18n/v2/i18n"
 
@@ -23,11 +23,11 @@ const (
 )
 
 var (
-	ErrTokenInvalid           = errors.Unauthorized(reason, "Token is invalid")
-	ErrTokenExpired           = errors.Unauthorized(reason, "Token has expired")
-	ErrTokenParseFail         = errors.Unauthorized(reason, "Fail to parse token")
-	ErrUnSupportSigningMethod = errors.Unauthorized(reason, "Wrong signing method")
-	ErrSignTokenFailed        = errors.Unauthorized(reason, "Failed to sign token")
+	ErrTokenInvalid           = errors.New("token is invalid")
+	ErrTokenExpired           = errors.New("token has expired")
+	ErrTokenParseFail         = errors.New("fail to parse token")
+	ErrUnSupportSigningMethod = errors.New("wrong signing method")
+	ErrSignTokenFailed        = errors.New("failed to sign token")
 )
 
 // Define i18n messages.
@@ -148,7 +148,7 @@ func (a *JWTAuth) Sign(ctx context.Context, userID string) (authn.IToken, error)
 
 	refreshToken, err := token.SignedString(a.opts.signingKey)
 	if err != nil {
-		return nil, errors.Unauthorized(reason, i18n.FromContext(ctx).LocalizeT(MessageSignTokenFailed))
+		return nil, errors.New(i18n.FromContext(ctx).LocalizeT(MessageSignTokenFailed))
 	}
 
 	tokenInfo := &tokenInfo{
@@ -166,23 +166,23 @@ func (a *JWTAuth) parseToken(ctx context.Context, refreshToken string) (*jwt.Reg
 	if err != nil {
 		ve, ok := err.(*jwt.ValidationError)
 		if !ok {
-			return nil, errors.Unauthorized(reason, err.Error())
+			return nil, errors.New(err.Error())
 		}
 		if ve.Errors&jwt.ValidationErrorMalformed != 0 {
-			return nil, errors.Unauthorized(reason, i18n.FromContext(ctx).LocalizeT(MessageTokenInvalid))
+			return nil, errors.New(i18n.FromContext(ctx).LocalizeT(MessageTokenInvalid))
 		}
 		if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
-			return nil, errors.Unauthorized(reason, i18n.FromContext(ctx).LocalizeT(MessageTokenExpired))
+			return nil, errors.New(i18n.FromContext(ctx).LocalizeT(MessageTokenExpired))
 		}
-		return nil, errors.Unauthorized(reason, i18n.FromContext(ctx).LocalizeT(MessageTokenParseFail))
+		return nil, errors.New(i18n.FromContext(ctx).LocalizeT(MessageTokenParseFail))
 	}
 
 	if !token.Valid {
-		return nil, errors.Unauthorized(reason, i18n.FromContext(ctx).LocalizeT(MessageTokenInvalid))
+		return nil, errors.New(i18n.FromContext(ctx).LocalizeT(MessageTokenInvalid))
 	}
 
 	if token.Method != a.opts.signingMethod {
-		return nil, errors.Unauthorized(reason, i18n.FromContext(ctx).LocalizeT(MessageUnSupportSigningMethod))
+		return nil, errors.New(i18n.FromContext(ctx).LocalizeT(MessageUnSupportSigningMethod))
 	}
 
 	return token.Claims.(*jwt.RegisteredClaims), nil
@@ -213,7 +213,7 @@ func (a *JWTAuth) Destroy(ctx context.Context, refreshToken string) error {
 // ParseClaims parse the token and return the claims.
 func (a *JWTAuth) ParseClaims(ctx context.Context, refreshToken string) (*jwt.RegisteredClaims, error) {
 	if refreshToken == "" {
-		return nil, errors.Unauthorized(reason, i18n.FromContext(ctx).LocalizeT(MessageTokenInvalid))
+		return nil, errors.New(i18n.FromContext(ctx).LocalizeT(MessageTokenInvalid))
 	}
 
 	claims, err := a.parseToken(ctx, refreshToken)
@@ -228,7 +228,7 @@ func (a *JWTAuth) ParseClaims(ctx context.Context, refreshToken string) (*jwt.Re
 		}
 
 		if exists {
-			return errors.Unauthorized(reason, i18n.FromContext(ctx).LocalizeT(MessageTokenInvalid))
+			return errors.New(i18n.FromContext(ctx).LocalizeT(MessageTokenInvalid))
 		}
 
 		return nil
