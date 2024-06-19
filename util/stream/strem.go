@@ -235,6 +235,12 @@ func TransformStream[T any, R any](s *Stream[T], f func(T) R) *Stream[R] {
 	return &Stream[R]{ch: ch}
 }
 
+// Transform To change the type of the Stream, we need to introduce a new function, not a method.
+// This function takes a Stream[T] and returns a Stream[R] by applying the provided function.
+func Transform[T any, R any](data []T, f func(T) R) *Stream[R] {
+	return TransformStream(NewStream(data), f)
+}
+
 // Filter keeps only the elements that satisfy the given predicate lazily.
 func (s *Stream[T]) Filter(f func(T) bool) *Stream[T] {
 	ch := make(chan T)
