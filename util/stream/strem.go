@@ -528,8 +528,9 @@ func (s *Stream[T]) Min(key ...string) float64 {
 
 // Range returns the max - min value of the stream.
 func (s *Stream[T]) Range(key ...string) float64 {
-	maxVal := s.Max(key...)
-	minVal := s.Min(key...)
+	ts := s.Collect()
+	maxVal := New(ts...).Max(key...)
+	minVal := New(ts...).Min(key...)
 	return maxVal - minVal
 }
 
