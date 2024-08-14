@@ -22,6 +22,6 @@ func BindMySQLFlags(m *config.MySQLConfiguration, fs *pflag.FlagSet) {
 		"Maximum idle connections allowed to connect to mysql.")
 	fs.Int32Var(&m.MaxOpenConnections, "mysql-max-open-connections", m.MaxOpenConnections, ""+
 		"Maximum open connections allowed to connect to mysql.")
-	fs.DurationVar(&m.MaxConnectionLifeTime.Duration, "mysql-max-connection-life-time", m.MaxConnectionLifeTime.Duration, ""+
+	fs.DurationVar(&m.MaxConnectionLifeTime, "mysql-max-connection-life-time", m.MaxConnectionLifeTime, ""+
 		"Maximum connection life time allowed to connect to mysql.")
 }
