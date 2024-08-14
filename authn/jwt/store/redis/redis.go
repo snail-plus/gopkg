@@ -40,6 +40,10 @@ func NewStore(cfg *Config) *Store {
 	return &Store{cli: cli, prefix: cfg.KeyPrefix}
 }
 
+func NewStoreWithClient(cli *redis.Client, prefix string) *Store {
+	return &Store{cli: cli, prefix: prefix}
+}
+
 // wrapperKey is used to build the key name in Redis.
 func (s *Store) wrapperKey(key string) string {
 	return fmt.Sprintf("%s%s", s.prefix, key)
