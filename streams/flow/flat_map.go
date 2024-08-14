@@ -3,7 +3,7 @@
 package flow
 
 import (
-	"gitee.com/eve_3/gopkg/streams"
+	"gitlab.evebatterycloud.com/infra/gopkg/streams"
 )
 
 // FlatMapFunction represents a FlatMap transformation function.

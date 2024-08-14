@@ -14,13 +14,13 @@ generate short str by unique uint64.
 
 
 ```bash
-go get -u gitee.com/eve_3/gopkg/id
+go get -u gitlab.evebatterycloud.com/infra/gopkg/id
 ```
 
 ```go
 import (
 	"fmt"
-  "gitee.com/eve_3/gopkg/id"
+  "gitlab.evebatterycloud.com/infra/gopkg/id"
 )
 
 func main() {
@@ -65,7 +65,7 @@ import (
 	"context"
 	"fmt"
 
-  "gitee.com/eve_3/gopkg/id"
+  "gitlab.evebatterycloud.com/infra/gopkg/id"
 )
 
 func main() {

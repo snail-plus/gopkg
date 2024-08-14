@@ -1,3 +1,3 @@
 // Copyright 2024 eve.  All rights reserved.
 
-package mongo // import "gitee.com/eve_3/gopkg/streams/connector/mongo"
+package mongo // import "gitlab.evebatterycloud.com/infra/gopkg/streams/connector/mongo"

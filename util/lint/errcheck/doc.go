@@ -1,3 +1,3 @@
 // Copyright 2024 eve.  All rights reserved.
 
-package errcheck // import "gitee.com/eve_3/gopkg/util/lint/errcheck"
+package errcheck // import "gitlab.evebatterycloud.com/infra/gopkg/util/lint/errcheck"

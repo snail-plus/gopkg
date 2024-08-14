@@ -1,3 +1,3 @@
 // Copyright 2024 eve.  All rights reserved.
 
-package idempotent // import "gitee.com/eve_3/gopkg/idempotent"
+package idempotent // import "gitlab.evebatterycloud.com/infra/gopkg/idempotent"

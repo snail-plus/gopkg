@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"sync/atomic"
 
-	utilversion "gitee.com/eve_3/gopkg/util/version"
+	utilversion "gitlab.evebatterycloud.com/infra/gopkg/util/version"
 )
 
 var dynamicGitVersion atomic.Value

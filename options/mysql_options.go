@@ -9,8 +9,8 @@ import (
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
 
-	"gitee.com/eve_3/gopkg/db"
-	"gitee.com/eve_3/gopkg/log"
+	"gitlab.evebatterycloud.com/infra/gopkg/db"
+	"gitlab.evebatterycloud.com/infra/gopkg/log"
 )
 
 var _ IOptions = (*MySQLOptions)(nil)

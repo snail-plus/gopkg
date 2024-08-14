@@ -10,8 +10,8 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	goi18n "github.com/nicksnyder/go-i18n/v2/i18n"
 
-	"gitee.com/eve_3/gopkg/authn"
-	"gitee.com/eve_3/gopkg/i18n"
+	"gitlab.evebatterycloud.com/infra/gopkg/authn"
+	"gitlab.evebatterycloud.com/infra/gopkg/i18n"
 )
 
 const (

@@ -1,9 +1,9 @@
 package http
 
 import (
-	"gitee.com/eve_3/gopkg/http/model"
-	"gitee.com/eve_3/gopkg/log"
 	"github.com/gin-gonic/gin"
+	"gitlab.evebatterycloud.com/infra/gopkg/http/model"
+	"gitlab.evebatterycloud.com/infra/gopkg/log"
 	"net/http"
 )
 

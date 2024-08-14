@@ -6,9 +6,9 @@ import (
 	"context"
 	"log"
 
-	"gitee.com/eve_3/gopkg/streams"
-	"gitee.com/eve_3/gopkg/streams/flow"
 	"github.com/redis/go-redis/v9"
+	"gitlab.evebatterycloud.com/infra/gopkg/streams"
+	"gitlab.evebatterycloud.com/infra/gopkg/streams/flow"
 )
 
 // RedisSource represents a Redis Pub/Sub source connector.

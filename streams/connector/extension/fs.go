@@ -7,9 +7,9 @@ import (
 	"log"
 	"os"
 
-	"gitee.com/eve_3/gopkg/streams"
-	"gitee.com/eve_3/gopkg/streams/flow"
-	"gitee.com/eve_3/gopkg/streams/util/ospkg"
+	"gitlab.evebatterycloud.com/infra/gopkg/streams"
+	"gitlab.evebatterycloud.com/infra/gopkg/streams/flow"
+	"gitlab.evebatterycloud.com/infra/gopkg/streams/util/ospkg"
 )
 
 // FileSource represents an inbound connector that reads items from a file.

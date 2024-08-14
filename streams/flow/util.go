@@ -5,7 +5,7 @@ package flow
 import (
 	"sync"
 
-	"gitee.com/eve_3/gopkg/streams"
+	"gitlab.evebatterycloud.com/infra/gopkg/streams"
 )
 
 // DoStream streams data from the outlet to inlet.

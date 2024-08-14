@@ -3,7 +3,7 @@
 package db
 
 import (
-	"gitee.com/eve_3/gopkg/log"
+	"gitlab.evebatterycloud.com/infra/gopkg/log"
 	"time"
 
 	"gorm.io/gorm"

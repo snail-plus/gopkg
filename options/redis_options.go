@@ -8,7 +8,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/spf13/pflag"
 
-	"gitee.com/eve_3/gopkg/db"
+	"gitlab.evebatterycloud.com/infra/gopkg/db"
 )
 
 var _ IOptions = (*RedisOptions)(nil)

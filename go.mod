@@ -1,4 +1,4 @@
-module gitee.com/eve_3/gopkg
+module gitlab.evebatterycloud.com/infra/gopkg
 
 go 1.22.0
 

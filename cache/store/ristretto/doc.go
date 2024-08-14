@@ -1,3 +1,3 @@
 // Copyright 2024 eve.  All rights reserved.
 
-package ristretto // import "gitee.com/eve_3/gopkg/cache/store/ristretto"
+package ristretto // import "gitlab.evebatterycloud.com/infra/gopkg/cache/store/ristretto"

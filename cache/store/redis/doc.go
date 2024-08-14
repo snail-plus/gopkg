@@ -1,3 +1,3 @@
 // Copyright 2024 eve.  All rights reserved.
 
-package redis // import "gitee.com/eve_3/gopkg/cache/store/redis"
+package redis // import "gitlab.evebatterycloud.com/infra/gopkg/cache/store/redis"

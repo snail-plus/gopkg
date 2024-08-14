@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/pflag"
 
-	"gitee.com/eve_3/gopkg/log"
+	"gitlab.evebatterycloud.com/infra/gopkg/log"
 )
 
 var _ IOptions = (*HealthOptions)(nil)

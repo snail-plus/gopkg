@@ -2,8 +2,8 @@ package stream
 
 import (
 	"fmt"
-	"gitee.com/eve_3/gopkg/util/reflect"
 	"github.com/spf13/cast"
+	"gitlab.evebatterycloud.com/infra/gopkg/util/reflect"
 	"math/rand"
 	"sort"
 )

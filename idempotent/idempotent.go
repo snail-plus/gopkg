@@ -9,7 +9,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"gitee.com/eve_3/gopkg/log"
+	"gitlab.evebatterycloud.com/infra/gopkg/log"
 )
 
 // redis lua script(read => delete => get delete flag).

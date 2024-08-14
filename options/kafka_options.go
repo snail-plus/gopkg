@@ -4,17 +4,17 @@ package options
 
 import (
 	"fmt"
-	"gitee.com/eve_3/gopkg/log"
+	"gitlab.evebatterycloud.com/infra/gopkg/log"
 	"strings"
 	"time"
 
-	stringsutil "gitee.com/eve_3/gopkg/util/strings"
 	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl"
 	"github.com/segmentio/kafka-go/sasl/plain"
 	"github.com/segmentio/kafka-go/sasl/scram"
 	"github.com/segmentio/kafka-go/snappy"
 	"github.com/spf13/pflag"
+	stringsutil "gitlab.evebatterycloud.com/infra/gopkg/util/strings"
 )
 
 var _ IOptions = (*KafkaOptions)(nil)

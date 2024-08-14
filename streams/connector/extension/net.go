@@ -10,8 +10,8 @@ import (
 	"net"
 	"time"
 
-	"gitee.com/eve_3/gopkg/streams"
-	"gitee.com/eve_3/gopkg/streams/flow"
+	"gitlab.evebatterycloud.com/infra/gopkg/streams"
+	"gitlab.evebatterycloud.com/infra/gopkg/streams/flow"
 )
 
 // ConnType represents a connection type.

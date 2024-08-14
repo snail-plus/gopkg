@@ -8,11 +8,11 @@ import (
 	"runtime"
 	"strings"
 
-	"gitee.com/eve_3/gopkg/log"
-	genericoptions "gitee.com/eve_3/gopkg/options"
-	"gitee.com/eve_3/gopkg/version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"gitlab.evebatterycloud.com/infra/gopkg/log"
+	genericoptions "gitlab.evebatterycloud.com/infra/gopkg/options"
+	"gitlab.evebatterycloud.com/infra/gopkg/version"
 	_ "go.uber.org/automaxprocs"
 )
 

@@ -4,15 +4,15 @@ package app
 
 import (
 	"fmt"
-	"gitee.com/eve_3/gopkg/util/homedir"
+	"gitlab.evebatterycloud.com/infra/gopkg/util/homedir"
 	"path/filepath"
 	"strings"
 
-	"gitee.com/eve_3/gopkg/log"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"gitlab.evebatterycloud.com/infra/gopkg/log"
 )
 
 const configFlagName = "config"

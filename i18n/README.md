@@ -8,7 +8,7 @@ i18n of different languages based [go-i18n](https://github.com/nicksnyder/go-i18
 
 
 ```bash
-go get -u gitee.com/eve_3/gopkg/i18n
+go get -u gitlab.evebatterycloud.com/infra/gopkg/i18n
 ```
 
 add language files
@@ -30,7 +30,7 @@ import (
 	"embed"
 	"fmt"
 	"golang.org/x/text/language"
-  "gitee.com/eve_3/gopkg/i18n"
+  "gitlab.evebatterycloud.com/infra/gopkg/i18n"
 )
 
 //go:embed locales
