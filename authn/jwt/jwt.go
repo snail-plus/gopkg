@@ -7,7 +7,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	goi18n "github.com/nicksnyder/go-i18n/v2/i18n"
 
 	"gitlab.evebatterycloud.com/infra/gopkg/authn"
@@ -164,16 +164,15 @@ func (a *JWTAuth) Sign(ctx context.Context, userID string) (authn.IToken, error)
 func (a *JWTAuth) parseToken(ctx context.Context, refreshToken string) (*jwt.RegisteredClaims, error) {
 	token, err := jwt.ParseWithClaims(refreshToken, &jwt.RegisteredClaims{}, a.opts.keyfunc)
 	if err != nil {
-		ve, ok := err.(*jwt.ValidationError)
-		if !ok {
-			return nil, errors.New(err.Error())
-		}
-		if ve.Errors&jwt.ValidationErrorMalformed != 0 {
+
+		if errors.Is(err, jwt.ErrTokenMalformed) {
 			return nil, errors.New(i18n.FromContext(ctx).LocalizeT(MessageTokenInvalid))
 		}
-		if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
+
+		if errors.Is(err, jwt.ErrTokenNotValidYet) {
 			return nil, errors.New(i18n.FromContext(ctx).LocalizeT(MessageTokenExpired))
 		}
+
 		return nil, errors.New(i18n.FromContext(ctx).LocalizeT(MessageTokenParseFail))
 	}
 
