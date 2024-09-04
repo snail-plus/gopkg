@@ -55,3 +55,19 @@ func MustParse(timeStr string) time.Time {
 func Format(tt time.Time, formatStr string) string {
 	return tt.Format(formatStr)
 }
+
+// GetStartAndEndTimeOfDay 根据传入的时间获取这个时间的开始时间 结束时间
+func GetStartAndEndTimeOfDay(t time.Time) (startTime, endTime time.Time) {
+	// 获取这个时间的当天的开始时间
+	startTime = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+
+	// 加上一天的时间得到当天的结束时间
+	endTime = startTime.AddDate(0, 0, 1).Add(-1 * time.Second)
+
+	return startTime, endTime
+}
+
+func SubtractDays(t time.Time, days int) time.Time {
+	// 计算往前推算的天数
+	return t.AddDate(0, 0, -days)
+}
