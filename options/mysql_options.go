@@ -17,14 +17,14 @@ var _ IOptions = (*MySQLOptions)(nil)
 
 // MySQLOptions defines options for mysql database.
 type MySQLOptions struct {
-	Host                  string        `json:"host,omitempty" mapstructure:"host"`
-	Username              string        `json:"username,omitempty" mapstructure:"username"`
-	Password              string        `json:"-" mapstructure:"password"`
-	Database              string        `json:"database" mapstructure:"database"`
-	MaxIdleConnections    int           `json:"max-idle-connections,omitempty" mapstructure:"max-idle-connections,omitempty"`
-	MaxOpenConnections    int           `json:"max-open-connections,omitempty" mapstructure:"max-open-connections"`
-	MaxConnectionLifeTime time.Duration `json:"max-connection-life-time,omitempty" mapstructure:"max-connection-life-time"`
-	LogLevel              int           `json:"log-level" mapstructure:"log-level"`
+	Host                  string        `json:"host,omitempty" mapstructure:"host" yaml:"host"`
+	Username              string        `json:"username,omitempty" mapstructure:"username" yaml:"username"`
+	Password              string        `json:"-" mapstructure:"password" yaml:"password"`
+	Database              string        `json:"database" mapstructure:"database" yaml:"database"`
+	MaxIdleConnections    int           `json:"max-idle-connections,omitempty" mapstructure:"max-idle-connections,omitempty" yaml:"max-idle-connections"`
+	MaxOpenConnections    int           `json:"max-open-connections,omitempty" mapstructure:"max-open-connections" yaml:"max-open-connections"`
+	MaxConnectionLifeTime time.Duration `json:"max-connection-life-time,omitempty" mapstructure:"max-connection-life-time" yaml:"max-connection-life-time"`
+	LogLevel              int           `json:"log-level" mapstructure:"log-level" yaml:"log-level"`
 }
 
 // NewMySQLOptions create a `zero` value instance.
