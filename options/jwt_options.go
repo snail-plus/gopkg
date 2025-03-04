@@ -14,10 +14,10 @@ var _ IOptions = (*JWTOptions)(nil)
 
 // JWTOptions contains configuration items related to API server features.
 type JWTOptions struct {
-	Key           string        `json:"key" mapstructure:"key"`
-	Expired       time.Duration `json:"expired" mapstructure:"expired"`
-	MaxRefresh    time.Duration `json:"max-refresh" mapstructure:"max-refresh"`
-	SigningMethod string        `json:"signing-method" mapstructure:"signing-method"`
+	Key           string        `json:"key" mapstructure:"key" yaml:"key"`
+	Expired       time.Duration `json:"expired" mapstructure:"expired" yaml:"expired"`
+	MaxRefresh    time.Duration `json:"max-refresh" mapstructure:"max-refresh" yaml:"max-refresh"`
+	SigningMethod string        `json:"signing-method" mapstructure:"signing-method" yaml:"signing-method"`
 }
 
 // NewJWTOptions creates a JWTOptions object with default parameters.
