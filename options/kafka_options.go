@@ -12,7 +12,6 @@ import (
 	"github.com/segmentio/kafka-go/sasl"
 	"github.com/segmentio/kafka-go/sasl/plain"
 	"github.com/segmentio/kafka-go/sasl/scram"
-	"github.com/segmentio/kafka-go/snappy"
 	"github.com/spf13/pflag"
 	stringsutil "gitlab.evebatterycloud.com/infra/gopkg/util/strings"
 )
@@ -332,33 +331,24 @@ func (o *KafkaOptions) Dialer() (*kafka.Dialer, error) {
 }
 
 func (o *KafkaOptions) Writer() (*kafka.Writer, error) {
-	dialer, err := o.Dialer()
-	if err != nil {
-		return nil, err
-	}
 
-	// Kafka writer connection config
-	config := kafka.WriterConfig{
-		Brokers:      o.Brokers,
-		Topic:        o.Topic,
+	w := &kafka.Writer{
+		Addr: kafka.TCP(o.Brokers...),
+		// NOTE: When Topic is not defined here, each Message must define it instead.
 		Balancer:     &kafka.LeastBytes{},
-		Dialer:       dialer,
-		WriteTimeout: o.Timeout,
-		ReadTimeout:  o.Timeout,
-
-		Async:        o.WriterOptions.Async,
-		BatchSize:    o.WriterOptions.BatchSize,
-		BatchBytes:   o.WriterOptions.BatchBytes,
-		BatchTimeout: o.WriterOptions.BatchTimeout,
-		MaxAttempts:  o.WriterOptions.MaxAttempts,
 		Logger:       &logger{4},
 		ErrorLogger:  &logger{1},
+		BatchTimeout: o.WriterOptions.BatchTimeout,
+		MaxAttempts:  o.WriterOptions.MaxAttempts,
+		Async:        o.WriterOptions.Async,
+		RequiredAcks: kafka.RequiredAcks(o.WriterOptions.RequiredAcks),
+		WriteTimeout: o.Timeout,
+		ReadTimeout:  o.Timeout,
+		Topic:        o.Topic,
 	}
 
 	if o.Compressed {
-		config.CompressionCodec = snappy.NewCompressionCodec()
+		w.Compression = kafka.Snappy
 	}
-
-	kafkaWriter := kafka.NewWriter(config)
-	return kafkaWriter, nil
+	return w, nil
 }
