@@ -173,6 +173,10 @@ func (a *JWTAuth) parseToken(ctx context.Context, refreshToken string) (*jwt.Reg
 			return nil, errors.New(i18n.FromContext(ctx).LocalizeT(MessageTokenExpired))
 		}
 
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, errors.New(i18n.FromContext(ctx).LocalizeT(MessageTokenExpired))
+		}
+
 		return nil, errors.New(i18n.FromContext(ctx).LocalizeT(MessageTokenParseFail))
 	}
 
