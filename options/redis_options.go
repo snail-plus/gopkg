@@ -15,19 +15,19 @@ var _ IOptions = (*RedisOptions)(nil)
 
 // RedisOptions defines options for redis cluster.
 type RedisOptions struct {
-	Addr         string        `json:"addr" mapstructure:"addr"`
-	Username     string        `json:"username" mapstructure:"username"`
-	Password     string        `json:"password" mapstructure:"password"`
-	Database     int           `json:"database" mapstructure:"database"`
-	MaxRetries   int           `json:"max-retries" mapstructure:"max-retries"`
-	MinIdleConns int           `json:"min-idle-conns" mapstructure:"min-idle-conns"`
-	DialTimeout  time.Duration `json:"dial-timeout" mapstructure:"dial-timeout"`
-	ReadTimeout  time.Duration `json:"read-timeout" mapstructure:"read-timeout"`
-	WriteTimeout time.Duration `json:"write-timeout" mapstructure:"write-timeout"`
-	PoolTimeout  time.Duration `json:"pool-time" mapstructure:"pool-time"`
-	PoolSize     int           `json:"pool-size" mapstructure:"pool-size"`
+	Addr         string        `json:"addr" mapstructure:"addr" yaml:"addr"`
+	Username     string        `json:"username" mapstructure:"username" yaml:"username"`
+	Password     string        `json:"password" mapstructure:"password" yaml:"password"`
+	Database     int           `json:"database" mapstructure:"database" yaml:"database"`
+	MaxRetries   int           `json:"max-retries" mapstructure:"max-retries" yaml:"max-retries"`
+	MinIdleConns int           `json:"min-idle-conns" mapstructure:"min-idle-conns" yaml:"min-idle-conns"`
+	DialTimeout  time.Duration `json:"dial-timeout" mapstructure:"dial-timeout" yaml:"dial-timeout"`
+	ReadTimeout  time.Duration `json:"read-timeout" mapstructure:"read-timeout" yaml:"read-timeout"`
+	WriteTimeout time.Duration `json:"write-timeout" mapstructure:"write-timeout" yaml:"write-timeout"`
+	PoolTimeout  time.Duration `json:"pool-time" mapstructure:"pool-time" yaml:"pool-time"`
+	PoolSize     int           `json:"pool-size" mapstructure:"pool-size" yaml:"pool-size"`
 	// tracing switch
-	EnableTrace bool `json:"enable-trace" mapstructure:"enable-trace"`
+	EnableTrace bool `json:"enable-trace" mapstructure:"enable-trace" yaml:"enable-trace"`
 }
 
 // NewRedisOptions create a `zero` value instance.
