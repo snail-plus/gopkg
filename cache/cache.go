@@ -4,7 +4,7 @@
 // multiple ways of managing your caches.
 package cache
 
-//go:generate mockgen -destination mock_cache.go -package cache gitlab.evebatterycloud.com/infra/gopkg/cache KeyGetter
+//go:generate mockgen -destination mock_cache.go -package cache github.com/snail-plus/gopkg/cache KeyGetter
 
 import (
 	"context"

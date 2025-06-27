@@ -8,7 +8,7 @@ import (
 
 	"github.com/dgraph-io/ristretto"
 
-	"gitlab.evebatterycloud.com/infra/gopkg/cache/store"
+	"github.com/snail-plus/gopkg/cache/store"
 )
 
 // L2Cache represents a two-level cache configuration.

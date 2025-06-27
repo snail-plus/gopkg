@@ -3,7 +3,7 @@
 package db
 
 import (
-	"gitlab.evebatterycloud.com/infra/gopkg/log"
+	"github.com/snail-plus/gopkg/log"
 	"time"
 
 	"gorm.io/gorm"

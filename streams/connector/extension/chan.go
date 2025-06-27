@@ -3,8 +3,8 @@
 package extension
 
 import (
-	"gitlab.evebatterycloud.com/infra/gopkg/streams"
-	"gitlab.evebatterycloud.com/infra/gopkg/streams/flow"
+	"github.com/snail-plus/gopkg/streams"
+	"github.com/snail-plus/gopkg/streams/flow"
 )
 
 // ChanSource represents an inbound connector that streams items from a channel.

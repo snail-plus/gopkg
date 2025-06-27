@@ -5,7 +5,7 @@ package options
 import (
 	"github.com/spf13/pflag"
 
-	"gitlab.evebatterycloud.com/infra/gopkg/config"
+	"github.com/snail-plus/gopkg/config"
 )
 
 // BindMySQLFlags binds the MySQLConfiguration struct fields to a flagset.

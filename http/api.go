@@ -1,9 +1,11 @@
 package http
 
 import (
+	"errors"
 	"github.com/gin-gonic/gin"
-	"gitlab.evebatterycloud.com/infra/gopkg/http/model"
-	"gitlab.evebatterycloud.com/infra/gopkg/log"
+	xerrors "github.com/snail-plus/gopkg/errors"
+	"github.com/snail-plus/gopkg/http/model"
+	"github.com/snail-plus/gopkg/log"
 	"net/http"
 )
 
@@ -15,10 +17,19 @@ func (r Api) Success(c *gin.Context, data any) {
 
 func (r Api) Failure(c *gin.Context, err error) {
 	log.Infof("Failure: %v", err)
-	c.JSON(http.StatusOK, model.Response[any]{
-		Code: model.SystemErrCodeFailure,
-		Msg:  err.Error(),
-	})
+
+	// 判断错误类型是不是 SystemError
+	var systemErr *xerrors.SystemError
+	if errors.As(err, &systemErr) {
+		code := systemErr.Code
+		c.JSON(http.StatusOK, model.Response[any]{Code: model.SystemErrCode(code), Msg: systemErr.Error()})
+	} else {
+		c.JSON(http.StatusOK, model.Response[any]{
+			Code: model.SystemErrCodeFailure,
+			Msg:  err.Error(),
+		})
+	}
+
 }
 
 func (r Api) Result(c *gin.Context, data any, err error) {

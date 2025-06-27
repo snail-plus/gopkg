@@ -11,8 +11,8 @@ import (
 
 	"github.com/gorilla/websocket"
 
-	"gitlab.evebatterycloud.com/infra/gopkg/streams"
-	"gitlab.evebatterycloud.com/infra/gopkg/streams/flow"
+	"github.com/snail-plus/gopkg/streams"
+	"github.com/snail-plus/gopkg/streams/flow"
 )
 
 // Message represents a WebSocket message container.

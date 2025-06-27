@@ -5,8 +5,10 @@
 package ip
 
 import (
+	"fmt"
 	"net"
 	"net/http"
+	"strings"
 )
 
 // Define http headers.
@@ -51,4 +53,44 @@ func RemoteIP(req *http.Request) string {
 	}
 
 	return remoteAddr
+}
+
+type IpFilter func(net.Interface, *net.IPNet) bool
+
+// GetLocalIps 获取局域网ip地址
+func GetLocalIps(filter IpFilter) []string {
+	netInterfaces, err := net.Interfaces()
+	if err != nil {
+		fmt.Println("net.Interfaces failed, err:", err.Error())
+	}
+
+	var ips []string
+	for i := 0; i < len(netInterfaces); i++ {
+		if (netInterfaces[i].Flags & net.FlagUp) != 0 {
+			addrs, _ := netInterfaces[i].Addrs()
+
+			for _, address := range addrs {
+				if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+					if ipnet.IP.To4() == nil {
+						continue
+					}
+					ipStr := ipnet.IP.String()
+
+					if filter == nil {
+						ips = append(ips, ipStr)
+					} else if filter(netInterfaces[i], ipnet) {
+						ips = append(ips, ipStr)
+					}
+				}
+			}
+		}
+
+	}
+	return ips
+}
+
+func GetLocalNoVmIps() []string {
+	return GetLocalIps(func(netInterface net.Interface, ipNet *net.IPNet) bool {
+		return !strings.Contains(netInterface.Name, "VMware")
+	})
 }

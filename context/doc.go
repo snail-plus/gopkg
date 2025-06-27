@@ -1,3 +1,3 @@
 // Copyright 2024 eve.  All rights reserved.
 
-package context // import "gitlab.evebatterycloud.com/infra/gopkg/context"
+package context // import "github.com/snail-plus/gopkg/context"

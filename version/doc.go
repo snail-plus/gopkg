@@ -1,3 +1,3 @@
 // Copyright 2024 eve.  All rights reserved.
 
-package version // import "gitlab.evebatterycloud.com/infra/gopkg/app/version"
+package version // import "github.com/snail-plus/gopkg/app/version"

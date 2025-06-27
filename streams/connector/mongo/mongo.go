@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strconv"
 
-	klog "gitlab.evebatterycloud.com/infra/gopkg/log"
+	klog "github.com/snail-plus/gopkg/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

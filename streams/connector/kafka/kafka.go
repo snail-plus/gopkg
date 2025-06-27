@@ -4,15 +4,15 @@ package kafka
 
 import (
 	"context"
-	"gitlab.evebatterycloud.com/infra/gopkg/log"
+	"github.com/snail-plus/gopkg/log"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"github.com/segmentio/kafka-go"
 
-	"gitlab.evebatterycloud.com/infra/gopkg/streams"
-	"gitlab.evebatterycloud.com/infra/gopkg/streams/flow"
+	"github.com/snail-plus/gopkg/streams"
+	"github.com/snail-plus/gopkg/streams/flow"
 )
 
 // KafkaSource represents an Apache Kafka source connector.

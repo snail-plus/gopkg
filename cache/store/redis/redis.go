@@ -9,7 +9,7 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"gitlab.evebatterycloud.com/infra/gopkg/cache/store"
+	"github.com/snail-plus/gopkg/cache/store"
 )
 
 const (

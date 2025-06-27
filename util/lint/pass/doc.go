@@ -1,3 +1,3 @@
 // Copyright 2024 eve.  All rights reserved.
 
-package pass // import "gitlab.evebatterycloud.com/infra/gopkg/util/lint/pass"
+package pass // import "github.com/snail-plus/gopkg/util/lint/pass"

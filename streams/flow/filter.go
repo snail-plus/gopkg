@@ -3,7 +3,7 @@
 package flow
 
 import (
-	"gitlab.evebatterycloud.com/infra/gopkg/streams"
+	"github.com/snail-plus/gopkg/streams"
 )
 
 // FilterPredicate represents a filter predicate (boolean-valued function).

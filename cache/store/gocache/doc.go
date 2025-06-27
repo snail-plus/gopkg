@@ -1,3 +1,3 @@
 // Copyright 2024 eve.  All rights reserved.
 
-package gocache // import "gitlab.evebatterycloud.com/infra/gopkg/cache/store/gocache"
+package gocache // import "github.com/snail-plus/gopkg/cache/store/gocache"

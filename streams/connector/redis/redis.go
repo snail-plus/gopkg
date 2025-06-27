@@ -7,8 +7,8 @@ import (
 	"log"
 
 	"github.com/redis/go-redis/v9"
-	"gitlab.evebatterycloud.com/infra/gopkg/streams"
-	"gitlab.evebatterycloud.com/infra/gopkg/streams/flow"
+	"github.com/snail-plus/gopkg/streams"
+	"github.com/snail-plus/gopkg/streams/flow"
 )
 
 // RedisSource represents a Redis Pub/Sub source connector.

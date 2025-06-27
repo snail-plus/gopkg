@@ -8,11 +8,11 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/snail-plus/gopkg/log"
+	genericoptions "github.com/snail-plus/gopkg/options"
+	"github.com/snail-plus/gopkg/version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"gitlab.evebatterycloud.com/infra/gopkg/log"
-	genericoptions "gitlab.evebatterycloud.com/infra/gopkg/options"
-	"gitlab.evebatterycloud.com/infra/gopkg/version"
 	_ "go.uber.org/automaxprocs"
 )
 

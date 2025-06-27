@@ -4,7 +4,7 @@ package options
 
 import (
 	"fmt"
-	"gitlab.evebatterycloud.com/infra/gopkg/log"
+	"github.com/snail-plus/gopkg/log"
 	"strings"
 	"time"
 
@@ -12,8 +12,8 @@ import (
 	"github.com/segmentio/kafka-go/sasl"
 	"github.com/segmentio/kafka-go/sasl/plain"
 	"github.com/segmentio/kafka-go/sasl/scram"
+	stringsutil "github.com/snail-plus/gopkg/util/strings"
 	"github.com/spf13/pflag"
-	stringsutil "gitlab.evebatterycloud.com/infra/gopkg/util/strings"
 )
 
 var _ IOptions = (*KafkaOptions)(nil)

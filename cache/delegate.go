@@ -6,7 +6,7 @@ import (
 	"context"
 	"time"
 
-	"gitlab.evebatterycloud.com/infra/gopkg/cache/store"
+	"github.com/snail-plus/gopkg/cache/store"
 )
 
 // DelegateCache is a representative cache used to represent the store. By representing

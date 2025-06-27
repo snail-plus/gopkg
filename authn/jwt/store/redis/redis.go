@@ -28,7 +28,7 @@ type Store struct {
 
 // NewStore create an *Store instance to handle token storage, deletion, and checking.
 func NewStore(cfg *Config) *Store {
-	// The reason `gitlab.evebatterycloud.com/infra/gopkg/db` is not used here is
+	// The reason `github.com/snail-plus/gopkg/db` is not used here is
 	// to minimize dependencies, and use `github.com/redis/go-redis/v9` to
 	// create redis client is not complex.
 	cli := redis.NewClient(&redis.Options{

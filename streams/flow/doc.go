@@ -1,3 +1,3 @@
 // Copyright 2024 eve.  All rights reserved.
 
-package flow // import "gitlab.evebatterycloud.com/infra/gopkg/streams/flow"
+package flow // import "github.com/snail-plus/gopkg/streams/flow"

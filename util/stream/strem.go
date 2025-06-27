@@ -2,8 +2,8 @@ package stream
 
 import (
 	"fmt"
+	"github.com/snail-plus/gopkg/util/reflect"
 	"github.com/spf13/cast"
-	"gitlab.evebatterycloud.com/infra/gopkg/util/reflect"
 	"math/rand"
 	"sort"
 )
