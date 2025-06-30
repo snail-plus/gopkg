@@ -11,13 +11,16 @@ import (
 
 // IToken defines methods to implement a generic token.
 type IToken interface {
-	// Get token string.
+	// GetToken Get token string.
 	GetToken() string
-	// Get token type.
+
+	GetRefreshToken() string
+
+	// GetTokenType Get token type.
 	GetTokenType() string
-	// Get token expiration timestamp.
+	// GetExpiresAt Get token expiration timestamp.
 	GetExpiresAt() int64
-	// JSON encoding
+	// EncodeToJSON JSON encoding
 	EncodeToJSON() ([]byte, error)
 }
 

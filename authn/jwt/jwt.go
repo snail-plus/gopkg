@@ -123,41 +123,74 @@ type JWTAuth struct {
 	store Storer
 }
 
+type TokenType string
+
+const (
+	AccessToken  TokenType = "accessToken"
+	RefreshToken TokenType = "refreshToken"
+)
+
 // Sign is used to generate a token.
-func (a *JWTAuth) Sign(ctx context.Context, userID string) (authn.IToken, error) {
-	now := time.Now()
-	expiresAt := now.Add(a.opts.expired)
+func (a *JWTAuth) Sign(ctx context.Context, userID string, ext ...map[string]any) (authn.IToken, error) {
 
-	token := jwt.NewWithClaims(a.opts.signingMethod, &jwt.RegisteredClaims{
-		// Issuer = iss,令牌颁发者。它表示该令牌是由谁创建的
-		Issuer: a.opts.issuer,
-		// IssuedAt = iat,令牌颁发时的时间戳。它表示令牌是何时被创建的
-		IssuedAt: jwt.NewNumericDate(now),
-		// ExpiresAt = exp,令牌的过期时间戳。它表示令牌将在何时过期
-		ExpiresAt: jwt.NewNumericDate(expiresAt),
-		// NotBefore = nbf,令牌的生效时的时间戳。它表示令牌从什么时候开始生效
-		NotBefore: jwt.NewNumericDate(now),
-		// Subject = sub,令牌的主体。它表示该令牌是关于谁的
-		Subject: userID,
-	})
-	if a.opts.tokenHeader != nil {
-		for k, v := range a.opts.tokenHeader {
-			token.Header[k] = v
+	genTokenFn := func(tokenType TokenType) (string, error) {
+		now := time.Now()
+		var expiresAt time.Time
+		if tokenType == AccessToken {
+			expiresAt = now.Add(a.opts.expired)
+		} else {
+			expiresAt = now.Add(a.opts.expired * 3)
 		}
+
+		token := jwt.NewWithClaims(a.opts.signingMethod, &jwt.RegisteredClaims{
+			// Issuer = iss,令牌颁发者。它表示该令牌是由谁创建的
+			Issuer: a.opts.issuer,
+			// IssuedAt = iat,令牌颁发时的时间戳。它表示令牌是何时被创建的
+			IssuedAt: jwt.NewNumericDate(now),
+			// ExpiresAt = exp,令牌的过期时间戳。它表示令牌将在何时过期
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+			// NotBefore = nbf,令牌的生效时的时间戳。它表示令牌从什么时候开始生效
+			NotBefore: jwt.NewNumericDate(now),
+			// Subject = sub,令牌的主体。它表示该令牌是关于谁的
+			Subject: userID,
+		})
+
+		if a.opts.tokenHeader != nil {
+			for k, v := range a.opts.tokenHeader {
+				token.Header[k] = v
+			}
+		}
+
+		token.Header["tokenType"] = tokenType
+		if len(ext) > 0 {
+			for k, v := range ext[0] {
+				token.Header[k] = v
+			}
+		}
+
+		jwtToken, err := token.SignedString(a.opts.signingKey)
+		if err != nil {
+			return "", errors.New(i18n.FromContext(ctx).LocalizeT(MessageSignTokenFailed))
+		}
+		return jwtToken, nil
 	}
 
-	refreshToken, err := token.SignedString(a.opts.signingKey)
+	accessToken, err := genTokenFn(AccessToken)
 	if err != nil {
-		return nil, errors.New(i18n.FromContext(ctx).LocalizeT(MessageSignTokenFailed))
+		return nil, err
 	}
 
-	tokenInfo := &tokenInfo{
-		ExpiresAt: expiresAt.Unix(),
-		Type:      a.opts.tokenType,
-		Token:     refreshToken,
+	refreshToken, err := genTokenFn(RefreshToken)
+	if err != nil {
+		return nil, err
 	}
 
-	return tokenInfo, nil
+	return &tokenInfo{
+		ExpiresAt:    time.Now().Add(a.opts.expired).Unix(),
+		Type:         a.opts.tokenType,
+		Token:        accessToken,
+		RefreshToken: refreshToken,
+	}, nil
 }
 
 // parseToken is used to parse the input refreshToken.

@@ -11,6 +11,8 @@ type tokenInfo struct {
 	// Token string.
 	Token string `json:"token"`
 
+	RefreshToken string `json:"refreshToken"`
+
 	// Token type.
 	Type string `json:"type"`
 
@@ -19,6 +21,9 @@ type tokenInfo struct {
 }
 
 func (t *tokenInfo) GetToken() string {
+	return t.Token
+}
+func (t *tokenInfo) GetRefreshToken() string {
 	return t.Token
 }
 
