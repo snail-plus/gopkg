@@ -8,14 +8,15 @@ import (
 
 // BaseRepo DB通用逻辑接口
 type BaseRepo[T schema.Tabler] interface {
-	Get(ctx context.Context, id int) (*T, error)                                                              // 查询
-	GetOne(ctx context.Context, condition string, args ...interface{}) (*T, error)                            // 查询
-	List(ctx context.Context, condition string, page, pageSize int, args ...interface{}) (int64, []*T, error) // 列表
-	Insert(ctx context.Context, value *T) error                                                               // 新增
-	Update(ctx context.Context, value *T) error                                                               // 修改
-	Delete(ctx context.Context, value *T) error                                                               // 删除
-	CustomUpdate(ctx context.Context, sql string, args ...interface{}) error                                  // 执行sql
-	CustomQuery(ctx context.Context, sql string, dest interface{}, args ...interface{}) error                 // 执行查询sql
+	Get(ctx context.Context, id int) (*T, error)                                                           // 查询
+	GetOne(ctx context.Context, condition any, args ...interface{}) (*T, error)                            // 查询
+	List(ctx context.Context, condition any, page, pageSize int, args ...interface{}) (int64, []*T, error) // 列表
+	QueryWithScopes(ctx context.Context, dest interface{}, funcs ...func(*gorm.DB) *gorm.DB) error         // 查询
+	Insert(ctx context.Context, value *T) error                                                            // 新增
+	Update(ctx context.Context, value *T) error                                                            // 修改
+	Delete(ctx context.Context, value *T) error                                                            // 删除
+	CustomUpdate(ctx context.Context, sql string, args ...interface{}) error                               // 执行sql
+	CustomQuery(ctx context.Context, sql string, dest interface{}, args ...interface{}) error              // 执行查询sql
 	CustomCount(ctx context.Context, sql string, args ...interface{}) (int64, error)
 }
 
@@ -39,7 +40,7 @@ func (h *BaseRepoImpl[T]) Get(ctx context.Context, id int) (*T, error) {
 	return &result, nil
 }
 
-func (h *BaseRepoImpl[T]) GetOne(ctx context.Context, condition string, args ...interface{}) (*T, error) {
+func (h *BaseRepoImpl[T]) GetOne(ctx context.Context, condition any, args ...interface{}) (*T, error) {
 	var result T
 	err := h.db.WithContext(ctx).Model(&result).Where(condition, args...).First(&result).Error
 	if err != nil {
@@ -49,16 +50,30 @@ func (h *BaseRepoImpl[T]) GetOne(ctx context.Context, condition string, args ...
 }
 
 // List 列表
-func (h *BaseRepoImpl[T]) List(ctx context.Context, condition string, page, pageSize int, args ...interface{}) (int64, []*T, error) {
+func (h *BaseRepoImpl[T]) List(ctx context.Context, condition any, page, pageSize int, args ...interface{}) (int64, []*T, error) {
 	var count int64
 	var tmp *T
-	err := h.db.WithContext(ctx).Model(tmp).Where(condition, args...).Count(&count).Error
-	if err != nil {
-		return 0, nil, err
-	}
+	var err error
 	var data []*T
-	err = h.db.Limit(pageSize).Offset((page-1)*pageSize).Where(condition, args...).Find(&data).Error
-	return count, data, err
+
+	if condition == nil {
+		err = h.db.WithContext(ctx).Model(tmp).Count(&count).Error
+		if err != nil {
+			return 0, nil, err
+		}
+
+		err = h.db.Limit(pageSize).Offset((page - 1) * pageSize).Find(&data).Error
+		return count, data, err
+	} else {
+		err = h.db.WithContext(ctx).Model(tmp).Where(condition, args...).Count(&count).Error
+		if err != nil {
+			return 0, nil, err
+		}
+
+		err = h.db.Limit(pageSize).Offset((page-1)*pageSize).Where(condition, args...).Find(&data).Error
+		return count, data, err
+	}
+
 }
 
 // Insert 新增
@@ -93,4 +108,12 @@ func (h *BaseRepoImpl[T]) CustomCount(ctx context.Context, sql string, args ...i
 	}
 
 	return data, nil
+}
+
+func (h *BaseRepoImpl[T]) QueryWithScopes(ctx context.Context, dest interface{}, funcs ...func(*gorm.DB) *gorm.DB) error {
+	return h.db.WithContext(ctx).Scopes(funcs...).Find(&dest).Error
+}
+
+func (h *BaseRepoImpl[T]) GetDb() *gorm.DB {
+	return h.db
 }
