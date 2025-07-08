@@ -83,7 +83,7 @@ func (h *BaseRepoImpl[T]) Insert(ctx context.Context, value *T) error {
 
 // Update 修改
 func (h *BaseRepoImpl[T]) Update(ctx context.Context, value *T) error {
-	return h.db.WithContext(ctx).Save(value).Error
+	return h.db.WithContext(ctx).Updates(value).Error
 }
 
 // Delete 删除
