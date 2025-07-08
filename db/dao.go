@@ -8,8 +8,9 @@ import (
 
 // BaseRepo DB通用逻辑接口
 type BaseRepo[T schema.Tabler] interface {
-	Get(ctx context.Context, id int) (*T, error)                                                           // 查询
-	GetOne(ctx context.Context, condition any, args ...interface{}) (*T, error)                            // 查询
+	Get(ctx context.Context, id int) (*T, error)                                // 查询
+	GetOne(ctx context.Context, condition any, args ...interface{}) (*T, error) // 查询
+	Count(ctx context.Context, value interface{}, condition any, args ...interface{}) (int64, error)
 	List(ctx context.Context, condition any, page, pageSize int, args ...interface{}) (int64, []*T, error) // 列表
 	QueryWithScopes(ctx context.Context, dest interface{}, funcs ...func(*gorm.DB) *gorm.DB) error         // 查询
 	Insert(ctx context.Context, value *T) error                                                            // 新增
@@ -112,6 +113,15 @@ func (h *BaseRepoImpl[T]) CustomCount(ctx context.Context, sql string, args ...i
 
 func (h *BaseRepoImpl[T]) QueryWithScopes(ctx context.Context, dest interface{}, funcs ...func(*gorm.DB) *gorm.DB) error {
 	return h.db.WithContext(ctx).Scopes(funcs...).Find(&dest).Error
+}
+
+func (h *BaseRepoImpl[T]) Count(ctx context.Context, value interface{}, condition any, args ...interface{}) (int64, error) {
+	var data int64
+	if err := h.db.WithContext(ctx).Model(value).Where(condition, args...).Count(&data).Error; err != nil {
+		return 0, err
+	}
+
+	return data, nil
 }
 
 func (h *BaseRepoImpl[T]) GetDb() *gorm.DB {
