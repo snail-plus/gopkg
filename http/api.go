@@ -22,7 +22,7 @@ func (r Api) Failure(c *gin.Context, err error) {
 	var systemErr *xerrors.SystemError
 	if errors.As(err, &systemErr) {
 		code := systemErr.Code
-		c.JSON(http.StatusOK, model.Response[any]{Code: model.SystemErrCode(code), Msg: systemErr.Error()})
+		c.JSON(http.StatusOK, model.Response[any]{Code: model.SystemErrCode(code), Msg: systemErr.Message})
 	} else {
 		c.JSON(http.StatusOK, model.Response[any]{
 			Code: model.SystemErrCodeFailure,
