@@ -11,13 +11,13 @@ type BaseRepo[T schema.Tabler] interface {
 	Get(ctx context.Context, id int) (*T, error)                                // 查询
 	GetOne(ctx context.Context, condition any, args ...interface{}) (*T, error) // 查询
 	Count(ctx context.Context, value interface{}, condition any, args ...interface{}) (int64, error)
-	List(ctx context.Context, condition any, page, pageSize int, args ...interface{}) (int64, []*T, error) // 列表
-	QueryWithScopes(ctx context.Context, dest interface{}, funcs ...func(*gorm.DB) *gorm.DB) error         // 查询
-	Insert(ctx context.Context, value *T) error                                                            // 新增
-	Update(ctx context.Context, value *T) error                                                            // 修改
-	Delete(ctx context.Context, value *T) error                                                            // 删除
-	CustomUpdate(ctx context.Context, sql string, args ...interface{}) error                               // 执行sql
-	CustomQuery(ctx context.Context, sql string, dest interface{}, args ...interface{}) error              // 执行查询sql
+	List(ctx context.Context, condition any, page, pageSize int, order any, args ...interface{}) (int64, []*T, error) // 列表
+	QueryWithScopes(ctx context.Context, dest interface{}, funcs ...func(*gorm.DB) *gorm.DB) error                    // 查询
+	Insert(ctx context.Context, value *T) error                                                                       // 新增
+	Update(ctx context.Context, value *T) error                                                                       // 修改
+	Delete(ctx context.Context, value *T) error                                                                       // 删除
+	CustomUpdate(ctx context.Context, sql string, args ...interface{}) error                                          // 执行sql
+	CustomQuery(ctx context.Context, sql string, dest interface{}, args ...interface{}) error                         // 执行查询sql
 	CustomCount(ctx context.Context, sql string, args ...interface{}) (int64, error)
 }
 
@@ -51,11 +51,15 @@ func (h *BaseRepoImpl[T]) GetOne(ctx context.Context, condition any, args ...int
 }
 
 // List 列表
-func (h *BaseRepoImpl[T]) List(ctx context.Context, condition any, page, pageSize int, args ...interface{}) (int64, []*T, error) {
+func (h *BaseRepoImpl[T]) List(ctx context.Context, condition any, page, pageSize int, order any, args ...interface{}) (int64, []*T, error) {
 	var count int64
 	var tmp *T
 	var err error
 	var data []*T
+
+	if order == nil {
+		order = "id desc"
+	}
 
 	if condition == nil {
 		err = h.db.WithContext(ctx).Model(tmp).Count(&count).Error
@@ -63,7 +67,7 @@ func (h *BaseRepoImpl[T]) List(ctx context.Context, condition any, page, pageSiz
 			return 0, nil, err
 		}
 
-		err = h.db.Limit(pageSize).Offset((page - 1) * pageSize).Find(&data).Error
+		err = h.db.Limit(pageSize).Offset((page - 1) * pageSize).Order(order).Find(&data).Error
 		return count, data, err
 	} else {
 		err = h.db.WithContext(ctx).Model(tmp).Where(condition, args...).Count(&count).Error
@@ -71,7 +75,7 @@ func (h *BaseRepoImpl[T]) List(ctx context.Context, condition any, page, pageSiz
 			return 0, nil, err
 		}
 
-		err = h.db.Limit(pageSize).Offset((page-1)*pageSize).Where(condition, args...).Find(&data).Error
+		err = h.db.Limit(pageSize).Offset((page-1)*pageSize).Where(condition, args...).Order(order).Find(&data).Error
 		return count, data, err
 	}
 
