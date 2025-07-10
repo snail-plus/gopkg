@@ -15,7 +15,7 @@ type Stream[T any] struct {
 
 // NewStream creates a new Stream from a slice.
 func NewStream[T any](data []T) *Stream[T] {
-	ch := make(chan T)
+	ch := make(chan T, len(data))
 
 	go func() {
 		for _, v := range data {
