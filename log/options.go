@@ -10,17 +10,21 @@ import (
 // Options contains configuration options for logging.
 type Options struct {
 	// DisableCaller specifies whether to include caller information in the log.
-	DisableCaller bool `json:"disable-caller,omitempty" mapstructure:"disable-caller"`
+	DisableCaller bool `json:"disable-caller,omitempty" yaml:"disable-caller"`
 	// DisableStacktrace specifies whether to record a stack trace for all messages at or above panic level.
-	DisableStacktrace bool `json:"disable-stacktrace,omitempty" mapstructure:"disable-stacktrace"`
+	DisableStacktrace bool `json:"disable-stacktrace,omitempty" yaml:"disable-stacktrace"`
 	// EnableColor specifies whether to output colored logs.
-	EnableColor bool `json:"enable-color"       mapstructure:"enable-color"`
+	EnableColor bool `json:"enable-color"       yaml:"enable-color"`
 	// Level specifies the minimum log level. Valid values are: debug, info, warn, error, dpanic, panic, and fatal.
-	Level string `json:"level,omitempty" mapstructure:"level"`
+	Level string `json:"level,omitempty" yaml:"level"`
 	// Format specifies the log output format. Valid values are: console and json.
-	Format string `json:"format,omitempty" mapstructure:"format"`
+	Format string `json:"format,omitempty" yaml:"format"`
+
 	// OutputPaths specifies the output paths for the logs.
-	OutputPaths []string `json:"output-paths,omitempty" mapstructure:"output-paths"`
+	OutputPaths []string `yaml:"output-paths"`
+	MaxSize     int      `yaml:"max-size"`    // 单个日志文件最大大小（单位：MB）
+	MaxBackups  int      `yaml:"max-backups"` // 保留的旧日志文件个数
+	MaxAge      int      `yaml:"max-age"`     // 保留的旧日志文件最大天数（单位：天）
 }
 
 // NewOptions creates a new Options object with default values.

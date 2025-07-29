@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/fsnotify/fsnotify"
 	"github.com/snail-plus/gopkg/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -33,7 +32,7 @@ var cfgFile string
 // AddConfigFlag adds flags for a specific server to the specified FlagSet object.
 // It also sets a passed functions to read values from configuration file into viper
 // when each cobra command's Execute method is called.
-func AddConfigFlag(fs *pflag.FlagSet, name string, watch bool) {
+func AddConfigFlag(fs *pflag.FlagSet, name string) {
 	fs.AddFlag(pflag.Lookup(configFlagName))
 
 	// Enable viper's automatic environment variable parsing. This means
@@ -66,12 +65,6 @@ func AddConfigFlag(fs *pflag.FlagSet, name string, watch bool) {
 			log.Debugw("Failed to read configuration file", "file", cfgFile, "err", err)
 		}
 
-		if watch {
-			viper.WatchConfig()
-			viper.OnConfigChange(func(e fsnotify.Event) {
-				log.Debugw("Config file changed", "name", e.Name)
-			})
-		}
 	})
 }
 

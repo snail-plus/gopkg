@@ -6,6 +6,8 @@
 package log
 
 import (
+	"gopkg.in/natefinch/lumberjack.v2"
+	"os"
 	"sync"
 	"time"
 
@@ -112,14 +114,44 @@ func newLogger(opts *Options) *zapLogger {
 	}
 
 	// 使用 cfg 创建 *zap.Logger 对象
-	z, err := cfg.Build(zap.AddStacktrace(zapcore.PanicLevel), zap.AddCallerSkip(2))
+	var err error
+	var zapLog *zap.Logger
+
+	if len(opts.OutputPaths) > 0 {
+		lumber := &lumberjack.Logger{
+			Filename:   opts.OutputPaths[0], // 日志文件路径
+			MaxSize:    10,                  // 单个日志文件最大大小（单位：MB）
+			MaxBackups: 5,                   // 保留的旧日志文件个数
+			MaxAge:     30,                  // 保留的旧日志文件最大天数（单位：天）
+			Compress:   true,                // 是否压缩旧日志文件
+		}
+
+		if opts.MaxSize > 0 {
+			lumber.MaxSize = opts.MaxSize
+		}
+
+		if opts.MaxBackups > 0 {
+			lumber.MaxBackups = opts.MaxBackups
+		}
+
+		if opts.MaxAge > 0 {
+			lumber.MaxAge = opts.MaxAge
+		}
+
+		zapLog = zap.New(zapcore.NewCore(zapcore.NewConsoleEncoder(encoderConfig),
+			zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(lumber)),
+			zap.NewAtomicLevelAt(zapLevel)))
+	} else {
+		zapLog, err = cfg.Build(zap.AddStacktrace(zapcore.PanicLevel), zap.AddCallerSkip(2))
+	}
+
 	if err != nil {
 		panic(err)
 	}
-	logger := &zapLogger{z: z, opts: opts}
 
+	logger := &zapLogger{z: zapLog, opts: opts}
 	// 把标准库的 log.Logger 的 info 级别的输出重定向到 zap.Logger
-	zap.RedirectStdLog(z)
+	zap.RedirectStdLog(zapLog)
 
 	return logger
 }
