@@ -7,6 +7,7 @@ package log
 
 import (
 	"gopkg.in/natefinch/lumberjack.v2"
+	"os"
 	"sync"
 	"time"
 
@@ -121,7 +122,7 @@ func newLogger(opts *Options) *zapLogger {
 		}
 
 		zapLog = zap.New(zapcore.NewCore(zapcore.NewConsoleEncoder(encoderConfig),
-			zapcore.NewMultiWriteSyncer(zapcore.AddSync(lumber)),
+			zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(lumber)),
 			zap.NewAtomicLevelAt(zapLevel)))
 	} else {
 		// 创建构建 zap.Logger 需要的配置
