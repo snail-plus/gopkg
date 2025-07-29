@@ -7,7 +7,6 @@ package log
 
 import (
 	"gopkg.in/natefinch/lumberjack.v2"
-	"os"
 	"sync"
 	"time"
 
@@ -96,23 +95,6 @@ func newLogger(opts *Options) *zapLogger {
 		encoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	}
 
-	// 创建构建 zap.Logger 需要的配置
-	cfg := &zap.Config{
-		// 是否在日志中显示调用日志所在的文件和行号，例如：`"caller":"onex/onex.go:75"`
-		DisableCaller: opts.DisableCaller,
-		// 是否禁止在 panic 及以上级别打印堆栈信息
-		DisableStacktrace: opts.DisableStacktrace,
-		// 指定日志级别
-		Level: zap.NewAtomicLevelAt(zapLevel),
-		// 指定日志显示格式，可选值：console, json
-		Encoding:      opts.Format,
-		EncoderConfig: encoderConfig,
-		// 指定日志输出位置
-		OutputPaths: opts.OutputPaths,
-		// 设置 zap 内部错误输出位置
-		ErrorOutputPaths: []string{"stderr"},
-	}
-
 	// 使用 cfg 创建 *zap.Logger 对象
 	var err error
 	var zapLog *zap.Logger
@@ -139,9 +121,25 @@ func newLogger(opts *Options) *zapLogger {
 		}
 
 		zapLog = zap.New(zapcore.NewCore(zapcore.NewConsoleEncoder(encoderConfig),
-			zapcore.NewMultiWriteSyncer(zapcore.AddSync(os.Stdout), zapcore.AddSync(lumber)),
+			zapcore.NewMultiWriteSyncer(zapcore.AddSync(lumber)),
 			zap.NewAtomicLevelAt(zapLevel)))
 	} else {
+		// 创建构建 zap.Logger 需要的配置
+		cfg := &zap.Config{
+			// 是否在日志中显示调用日志所在的文件和行号，例如：`"caller":"onex/onex.go:75"`
+			DisableCaller: opts.DisableCaller,
+			// 是否禁止在 panic 及以上级别打印堆栈信息
+			DisableStacktrace: opts.DisableStacktrace,
+			// 指定日志级别
+			Level: zap.NewAtomicLevelAt(zapLevel),
+			// 指定日志显示格式，可选值：console, json
+			Encoding:      opts.Format,
+			EncoderConfig: encoderConfig,
+			// 指定日志输出位置
+			OutputPaths: opts.OutputPaths,
+			// 设置 zap 内部错误输出位置
+			ErrorOutputPaths: []string{"stderr"},
+		}
 		zapLog, err = cfg.Build(zap.AddStacktrace(zapcore.PanicLevel), zap.AddCallerSkip(2))
 	}
 
