@@ -48,18 +48,18 @@ type zapLogger struct {
 var _ Logger = (*zapLogger)(nil)
 
 var (
-	mu sync.Mutex
-
 	// std 定义了默认的全局 Logger.
 	std = newLogger(NewOptions())
 )
 
+var once sync.Once
+
 // Init 使用指定的选项初始化 Logger.
 func Init(opts *Options) {
-	mu.Lock()
-	defer mu.Unlock()
-
-	std = newLogger(opts)
+	once.Do(func() {
+		std = newLogger(opts)
+		Infof("init logger done")
+	})
 }
 
 // newLogger 根据传入的 opts 创建 Logger.
