@@ -6,7 +6,8 @@
 package log
 
 import (
-	"gopkg.in/natefinch/lumberjack.v2"
+	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -100,28 +101,23 @@ func newLogger(opts *Options) *zapLogger {
 	var zapLog *zap.Logger
 
 	if len(opts.OutputPaths) > 0 {
-		lumber := &lumberjack.Logger{
-			Filename:   opts.OutputPaths[0], // 日志文件路径
-			MaxSize:    10,                  // 单个日志文件最大大小（单位：MB）
-			MaxBackups: 5,                   // 保留的旧日志文件个数
-			MaxAge:     30,                  // 保留的旧日志文件最大天数（单位：天）
-			Compress:   true,                // 是否压缩旧日志文件
+		logFileName := opts.OutputPaths[0]
+		splits := strings.SplitN(logFileName, ".", 2)
+		var logPathTemplate = "./logs/app-%s.log"
+		if len(splits) >= 2 {
+			logPathTemplate = "./logs/" + splits[0] + "-%s.log"
 		}
 
-		if opts.MaxSize > 0 {
-			lumber.MaxSize = opts.MaxSize
-		}
+		// 创建按天分割的写入器
+		dailyWriter := NewDailyRotator(logPathTemplate)
 
-		if opts.MaxBackups > 0 {
-			lumber.MaxBackups = opts.MaxBackups
-		}
-
-		if opts.MaxAge > 0 {
-			lumber.MaxAge = opts.MaxAge
+		// 确保日志目录存在
+		if _, err = os.Stat("./logs"); os.IsNotExist(err) {
+			_ = os.Mkdir("./logs", 0755)
 		}
 
 		zapLog = zap.New(zapcore.NewCore(zapcore.NewConsoleEncoder(encoderConfig),
-			zapcore.NewMultiWriteSyncer(zapcore.AddSync(lumber)),
+			zapcore.AddSync(dailyWriter),
 			zap.NewAtomicLevelAt(zapLevel)))
 	} else {
 		// 创建构建 zap.Logger 需要的配置
