@@ -108,13 +108,13 @@ func newLogger(opts *Options) *zapLogger {
 			logPathTemplate = "./logs/" + splits[0] + "-%s.log"
 		}
 
-		// 创建按天分割的写入器
-		dailyWriter := NewDailyRotator(logPathTemplate)
-
 		// 确保日志目录存在
 		if _, err = os.Stat("./logs"); os.IsNotExist(err) {
 			_ = os.Mkdir("./logs", 0755)
 		}
+
+		// 创建按天分割的写入器
+		dailyWriter := NewDailyRotator(logPathTemplate)
 
 		zapLog = zap.New(zapcore.NewCore(zapcore.NewConsoleEncoder(encoderConfig),
 			zapcore.AddSync(dailyWriter),
