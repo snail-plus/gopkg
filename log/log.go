@@ -132,7 +132,7 @@ func newLogger(opts *Options) *zapLogger {
 			Encoding:      opts.Format,
 			EncoderConfig: encoderConfig,
 			// 指定日志输出位置
-			OutputPaths: opts.OutputPaths,
+			OutputPaths: []string{"stdout"},
 			// 设置 zap 内部错误输出位置
 			ErrorOutputPaths: []string{"stderr"},
 		}
