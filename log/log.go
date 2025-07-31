@@ -109,7 +109,7 @@ func newLogger(opts *Options) *zapLogger {
 		}
 
 		// 确保日志目录存在
-		if _, err = os.Stat("./logs"); os.IsNotExist(err) {
+		if _, eErr := os.Stat("./logs"); os.IsNotExist(eErr) {
 			_ = os.Mkdir("./logs", 0755)
 		}
 
