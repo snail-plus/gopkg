@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/snail-plus/gopkg/log"
-	genericoptions "github.com/snail-plus/gopkg/options"
 	"github.com/snail-plus/gopkg/version"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -81,19 +80,6 @@ func WithHealthCheckFunc(fn HealthCheckFunc) Option {
 	return func(a *App) {
 		a.healthCheckFunc = fn
 	}
-}
-
-// WithDefaultHealthCheckFunc set the default health check function.
-func WithDefaultHealthCheckFunc() Option {
-	fn := func() HealthCheckFunc {
-		return func() error {
-			go genericoptions.NewHealthOptions().ServeHealthCheck()
-
-			return nil
-		}
-	}
-
-	return WithHealthCheckFunc(fn())
 }
 
 // WithSilence sets the application to silent mode, in which the program startup
