@@ -100,7 +100,7 @@ func newLogger(opts *Options) *zapLogger {
 	var err error
 	var zapLog *zap.Logger
 
-	if len(opts.OutputPaths) > 0 {
+	if len(opts.OutputPaths) > 0 && opts.OutputPaths[0] != "stdout" {
 		logFileName := opts.OutputPaths[0]
 		splits := strings.SplitN(logFileName, ".", 2)
 		var logPathTemplate = "./logs/app-%s.log"
