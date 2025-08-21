@@ -1,6 +1,7 @@
 package stream
 
 import (
+	"context"
 	"fmt"
 	"github.com/snail-plus/gopkg/util/reflect"
 	"github.com/spf13/cast"
@@ -31,12 +32,18 @@ func New[T any](data ...T) *Stream[T] {
 	return NewStream(data)
 }
 
-func Generate[T any](f func() T) *Stream[T] {
+func Generate[T any](ctx context.Context, f func() T) *Stream[T] {
 	ch := make(chan T)
 
 	go func() {
 		for {
-			ch <- f()
+			select {
+			case <-ctx.Done():
+				close(ch)
+				return
+			default:
+				ch <- f()
+			}
 		}
 	}()
 
@@ -57,6 +64,7 @@ func Concat[T any](a Stream[T], b Stream[T]) *Stream[T] {
 			ch <- v2
 		}
 
+		close(ch)
 	}()
 
 	return &Stream[T]{ch: ch}
@@ -71,7 +79,7 @@ type Number interface {
 type MapperFunc[T, R any] func(T) []R
 
 /*
-Returns a stream consisting of the results of replacing each element of
+FlatMap Returns a stream consisting of the results of replacing each element of
 
   - this stream with the contents of a mapped stream produced by applying
 
@@ -318,16 +326,16 @@ func (s *Stream[T]) Limit(n int) *Stream[T] {
 	return &Stream[T]{ch: ch}
 }
 
-// Skip returns a new Stream that contains the first n elements lazily.
+// Skip returns a new Stream that skips the first n elements.
 func (s *Stream[T]) Skip(n int) *Stream[T] {
 	ch := make(chan T)
 
 	go func() {
 		count := 0
 		for v := range s.ch {
-			count++
-			if count <= n {
-				break
+			if count < n {
+				count++
+				continue
 			}
 			ch <- v
 		}
@@ -437,8 +445,7 @@ func (s *Stream[T]) Random(size ...uint) *Stream[T] {
 	return &Stream[T]{ch: resultCh} // Return a new stream with the randomly selected elements
 }
 
-// Count collects all elements from the stream, sorts them using the provided less function,
-// and returns a new stream with the sorted elements.
+// Count returns the number of elements in the stream
 func (s *Stream[T]) Count() int {
 	count := 0
 	for range s.ch {
@@ -611,4 +618,79 @@ func ToMap[T any, K comparable](stream *Stream[T], keyFunc func(T) K) map[K]T {
 		result[keyFunc(v)] = v
 	}
 	return result
+}
+
+// Distinct returns a new Stream that contains only distinct elements according to the default comparison.
+func (s *Stream[T]) Distinct() *Stream[T] {
+	ch := make(chan T)
+	seen := make(map[any]struct{})
+
+	go func() {
+		for v := range s.ch {
+			if _, ok := seen[v]; !ok {
+				seen[v] = struct{}{}
+				ch <- v
+			}
+		}
+		close(ch)
+	}()
+
+	return &Stream[T]{ch: ch}
+}
+
+// TakeWhile returns a Stream consisting of the longest prefix of elements taken from this stream
+// that match the given predicate.
+func (s *Stream[T]) TakeWhile(f func(T) bool) *Stream[T] {
+	ch := make(chan T)
+
+	go func() {
+		for v := range s.ch {
+			if !f(v) {
+				break
+			}
+			ch <- v
+		}
+		close(ch)
+	}()
+
+	return &Stream[T]{ch: ch}
+}
+
+// DropWhile returns a Stream consisting of the remaining elements of this stream
+// after dropping the longest prefix of elements that match the given predicate.
+func (s *Stream[T]) DropWhile(f func(T) bool) *Stream[T] {
+	ch := make(chan T)
+
+	go func() {
+		dropping := true
+		for v := range s.ch {
+			if dropping && !f(v) {
+				dropping = false
+			}
+			if !dropping {
+				ch <- v
+			}
+		}
+		close(ch)
+	}()
+
+	return &Stream[T]{ch: ch}
+}
+
+type Int interface {
+	~int | ~int8 | ~int16 | ~int32 | ~int64
+}
+
+// Range creates a Stream of integers from start (inclusive) to end (exclusive).
+func Range[T Int](start, end T) *Stream[T] {
+	ch := make(chan T)
+
+	go func() {
+		for i := start; i < end; i++ {
+			ch <- i
+		}
+		close(ch)
+	}()
+
+	return &Stream[T]{ch: ch}
 }
