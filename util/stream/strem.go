@@ -3,10 +3,12 @@ package stream
 import (
 	"context"
 	"fmt"
-	"github.com/snail-plus/gopkg/util/reflect"
-	"github.com/spf13/cast"
 	"math/rand"
 	"sort"
+
+	"github.com/panjf2000/ants/v2"
+	"github.com/snail-plus/gopkg/util/reflect"
+	"github.com/spf13/cast"
 )
 
 // Stream represents a lazily evaluated stream of values.
@@ -14,16 +16,27 @@ type Stream[T any] struct {
 	ch <-chan T
 }
 
+var pool *ants.Pool
+
+func init() {
+	var err error
+	// 创建一个协程池，默认大小为 500
+	pool, err = ants.NewPool(500)
+	if err != nil {
+		panic("Failed to create goroutine pool: " + err.Error())
+	}
+}
+
 // NewStream creates a new Stream from a slice.
 func NewStream[T any](data []T) *Stream[T] {
 	ch := make(chan T, len(data))
 
-	go func() {
+	_ = pool.Submit(func() {
 		for _, v := range data {
 			ch <- v
 		}
 		close(ch)
-	}()
+	})
 
 	return &Stream[T]{ch: ch}
 }
@@ -35,7 +48,7 @@ func New[T any](data ...T) *Stream[T] {
 func Generate[T any](ctx context.Context, f func() T) *Stream[T] {
 	ch := make(chan T)
 
-	go func() {
+	_ = pool.Submit(func() {
 		for {
 			select {
 			case <-ctx.Done():
@@ -45,7 +58,7 @@ func Generate[T any](ctx context.Context, f func() T) *Stream[T] {
 				ch <- f()
 			}
 		}
-	}()
+	})
 
 	return &Stream[T]{ch: ch}
 }
@@ -53,7 +66,7 @@ func Generate[T any](ctx context.Context, f func() T) *Stream[T] {
 func Concat[T any](a Stream[T], b Stream[T]) *Stream[T] {
 	ch := make(chan T)
 
-	go func() {
+	_ = pool.Submit(func() {
 		slice1 := a.ToSlice()
 		for _, v1 := range slice1 {
 			ch <- v1
@@ -65,7 +78,7 @@ func Concat[T any](a Stream[T], b Stream[T]) *Stream[T] {
 		}
 
 		close(ch)
-	}()
+	})
 
 	return &Stream[T]{ch: ch}
 }
@@ -103,7 +116,7 @@ FlatMap Returns a stream consisting of the results of replacing each element of
 func FlatMap[T, R any](stream *Stream[T], mapper MapperFunc[T, R]) *Stream[R] {
 	outCh := make(chan R)
 
-	go func() {
+	_ = pool.Submit(func() {
 		defer close(outCh)
 
 		for v := range stream.ch {
@@ -112,7 +125,7 @@ func FlatMap[T, R any](stream *Stream[T], mapper MapperFunc[T, R]) *Stream[R] {
 				outCh <- mappedVal
 			}
 		}
-	}()
+	})
 
 	return &Stream[R]{ch: outCh}
 }
@@ -122,12 +135,12 @@ type ToIntFunc[T any] func(T) int
 func (s *Stream[T]) MapToInt(f ToIntFunc[T]) *Stream[int] {
 	ch := make(chan int)
 
-	go func() {
+	_ = pool.Submit(func() {
 		for v := range s.ch {
 			ch <- f(v)
 		}
 		close(ch)
-	}()
+	})
 
 	return &Stream[int]{ch: ch}
 }
@@ -137,12 +150,12 @@ type ToInt32Func[T any] func(T) int32
 func (s *Stream[T]) MapToInt32(f ToInt32Func[T]) *Stream[int32] {
 	ch := make(chan int32)
 
-	go func() {
+	_ = pool.Submit(func() {
 		for v := range s.ch {
 			ch <- f(v)
 		}
 		close(ch)
-	}()
+	})
 
 	return &Stream[int32]{ch: ch}
 }
@@ -152,12 +165,12 @@ type ToInt64Func[T any] func(T) int64
 func (s *Stream[T]) MapToInt64(f ToInt64Func[T]) *Stream[int64] {
 	ch := make(chan int64)
 
-	go func() {
+	_ = pool.Submit(func() {
 		for v := range s.ch {
 			ch <- f(v)
 		}
 		close(ch)
-	}()
+	})
 
 	return &Stream[int64]{ch: ch}
 }
@@ -167,12 +180,12 @@ type ToFloat32Func[T any] func(T) float32
 func (s *Stream[T]) MapToFloat32(f ToFloat32Func[T]) *Stream[float32] {
 	ch := make(chan float32)
 
-	go func() {
+	_ = pool.Submit(func() {
 		for v := range s.ch {
 			ch <- f(v)
 		}
 		close(ch)
-	}()
+	})
 
 	return &Stream[float32]{ch: ch}
 }
@@ -182,12 +195,12 @@ type ToFloat64Func[T any] func(T) float64
 func (s *Stream[T]) MapToFloat64(f ToFloat64Func[T]) *Stream[float64] {
 	ch := make(chan float64)
 
-	go func() {
+	_ = pool.Submit(func() {
 		for v := range s.ch {
 			ch <- f(v)
 		}
 		close(ch)
-	}()
+	})
 
 	return &Stream[float64]{ch: ch}
 }
@@ -196,12 +209,12 @@ func (s *Stream[T]) MapToFloat64(f ToFloat64Func[T]) *Stream[float64] {
 func (s *Stream[T]) Map(f func(T) T) *Stream[T] {
 	ch := make(chan T)
 
-	go func() {
+	_ = pool.Submit(func() {
 		for v := range s.ch {
 			ch <- f(v)
 		}
 		close(ch)
-	}()
+	})
 
 	return &Stream[T]{ch: ch}
 }
@@ -217,13 +230,13 @@ func (s *Stream[T]) ForEach(f func(T)) {
 func (s *Stream[T]) Peek(f func(T)) *Stream[T] {
 	ch := make(chan T)
 
-	go func() {
+	_ = pool.Submit(func() {
 		for v := range s.ch {
 			f(v)
 			ch <- v
 		}
 		close(ch)
-	}()
+	})
 
 	return &Stream[T]{ch: ch}
 }
@@ -233,12 +246,12 @@ func (s *Stream[T]) Peek(f func(T)) *Stream[T] {
 func TransformStream[T any, R any](s *Stream[T], f func(T) R) *Stream[R] {
 	ch := make(chan R)
 
-	go func() {
+	_ = pool.Submit(func() {
 		for v := range s.ch {
 			ch <- f(v)
 		}
 		close(ch)
-	}()
+	})
 
 	return &Stream[R]{ch: ch}
 }
@@ -253,14 +266,14 @@ func Transform[T any, R any](data []T, f func(T) R) *Stream[R] {
 func (s *Stream[T]) Filter(f func(T) bool) *Stream[T] {
 	ch := make(chan T)
 
-	go func() {
+	_ = pool.Submit(func() {
 		for v := range s.ch {
 			if f(v) {
 				ch <- v
 			}
 		}
 		close(ch)
-	}()
+	})
 
 	return &Stream[T]{ch: ch}
 }
@@ -311,7 +324,7 @@ func (s *Stream[T]) Contains(in T) bool {
 func (s *Stream[T]) Limit(n int) *Stream[T] {
 	ch := make(chan T)
 
-	go func() {
+	_ = pool.Submit(func() {
 		count := 0
 		for v := range s.ch {
 			if count >= n {
@@ -321,7 +334,7 @@ func (s *Stream[T]) Limit(n int) *Stream[T] {
 			count++
 		}
 		close(ch)
-	}()
+	})
 
 	return &Stream[T]{ch: ch}
 }
@@ -330,7 +343,7 @@ func (s *Stream[T]) Limit(n int) *Stream[T] {
 func (s *Stream[T]) Skip(n int) *Stream[T] {
 	ch := make(chan T)
 
-	go func() {
+	_ = pool.Submit(func() {
 		count := 0
 		for v := range s.ch {
 			if count < n {
@@ -340,7 +353,7 @@ func (s *Stream[T]) Skip(n int) *Stream[T] {
 			ch <- v
 		}
 		close(ch)
-	}()
+	})
 
 	return &Stream[T]{ch: ch}
 }
@@ -351,7 +364,7 @@ func (s *Stream[T]) DistinctBy(keyFunc func(T) any) *Stream[T] {
 	ch := make(chan T)
 	seen := make(map[any]struct{})
 
-	go func() {
+	_ = pool.Submit(func() {
 		for v := range s.ch {
 			key := keyFunc(v)
 			if _, ok := seen[key]; !ok {
@@ -360,7 +373,7 @@ func (s *Stream[T]) DistinctBy(keyFunc func(T) any) *Stream[T] {
 			}
 		}
 		close(ch)
-	}()
+	})
 
 	return &Stream[T]{ch: ch}
 }
@@ -435,12 +448,12 @@ func (s *Stream[T]) Random(size ...uint) *Stream[T] {
 	indices := rand.Perm(len(data))[:n] // Generate a random permutation of indices and slice to desired size
 
 	resultCh := make(chan T)
-	go func() {
+	_ = pool.Submit(func() {
 		for _, idx := range indices {
 			resultCh <- data[idx] // Send the randomly selected elements to the result channel
 		}
 		close(resultCh)
-	}()
+	})
 
 	return &Stream[T]{ch: resultCh} // Return a new stream with the randomly selected elements
 }
@@ -625,7 +638,7 @@ func (s *Stream[T]) Distinct() *Stream[T] {
 	ch := make(chan T)
 	seen := make(map[any]struct{})
 
-	go func() {
+	_ = pool.Submit(func() {
 		for v := range s.ch {
 			if _, ok := seen[v]; !ok {
 				seen[v] = struct{}{}
@@ -633,7 +646,7 @@ func (s *Stream[T]) Distinct() *Stream[T] {
 			}
 		}
 		close(ch)
-	}()
+	})
 
 	return &Stream[T]{ch: ch}
 }
@@ -643,7 +656,7 @@ func (s *Stream[T]) Distinct() *Stream[T] {
 func (s *Stream[T]) TakeWhile(f func(T) bool) *Stream[T] {
 	ch := make(chan T)
 
-	go func() {
+	_ = pool.Submit(func() {
 		for v := range s.ch {
 			if !f(v) {
 				break
@@ -651,7 +664,7 @@ func (s *Stream[T]) TakeWhile(f func(T) bool) *Stream[T] {
 			ch <- v
 		}
 		close(ch)
-	}()
+	})
 
 	return &Stream[T]{ch: ch}
 }
@@ -661,7 +674,7 @@ func (s *Stream[T]) TakeWhile(f func(T) bool) *Stream[T] {
 func (s *Stream[T]) DropWhile(f func(T) bool) *Stream[T] {
 	ch := make(chan T)
 
-	go func() {
+	_ = pool.Submit(func() {
 		dropping := true
 		for v := range s.ch {
 			if dropping && !f(v) {
@@ -672,7 +685,7 @@ func (s *Stream[T]) DropWhile(f func(T) bool) *Stream[T] {
 			}
 		}
 		close(ch)
-	}()
+	})
 
 	return &Stream[T]{ch: ch}
 }
@@ -685,12 +698,12 @@ type Int interface {
 func Range[T Int](start, end T) *Stream[T] {
 	ch := make(chan T)
 
-	go func() {
+	_ = pool.Submit(func() {
 		for i := start; i < end; i++ {
 			ch <- i
 		}
 		close(ch)
-	}()
+	})
 
 	return &Stream[T]{ch: ch}
 }
