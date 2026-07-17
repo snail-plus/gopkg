@@ -17,20 +17,18 @@ type dailyRotator struct {
 }
 
 // NewDailyRotator 创建按天分割的日志写入器
-func NewDailyRotator(logPath string) *dailyRotator {
-	// 初始化时获取当前日期
+func NewDailyRotator(logPath string, maxSize, maxBackups, maxAge int) *dailyRotator {
 	now := time.Now()
 	currentDay := now.Format("2006-01-02")
-	// 构建初始日志文件路径
 	initialFilename := fmt.Sprintf(logPath, currentDay)
 	nextCheck := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).Add(24 * time.Hour).Unix()
 	lj := &lumberjack.Logger{
 		Filename:   initialFilename,
-		MaxSize:    100,  // 单个文件最大大小（MB，即使未达阈值，也会按天分割）
-		MaxBackups: 30,   // 保留旧文件数量
-		MaxAge:     30,   // 保留旧文件天数
-		Compress:   true, // 压缩旧文件
-		LocalTime:  true, // 使用本地时间
+		MaxSize:    maxSize,
+		MaxBackups: maxBackups,
+		MaxAge:     maxAge,
+		Compress:   true,
+		LocalTime:  true,
 	}
 
 	return &dailyRotator{

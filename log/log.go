@@ -114,7 +114,7 @@ func newLogger(opts *Options) *zapLogger {
 		}
 
 		// 创建按天分割的写入器
-		dailyWriter := NewDailyRotator(logPathTemplate)
+		dailyWriter := NewDailyRotator(logPathTemplate, opts.MaxSize, opts.MaxBackups, opts.MaxAge)
 
 		zapLog = zap.New(zapcore.NewCore(zapcore.NewConsoleEncoder(encoderConfig),
 			zapcore.AddSync(dailyWriter),

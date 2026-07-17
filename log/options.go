@@ -33,6 +33,9 @@ func NewOptions() *Options {
 		Level:       zapcore.InfoLevel.String(),
 		Format:      "console",
 		OutputPaths: []string{"stdout"},
+		MaxSize:     100,
+		MaxBackups:  30,
+		MaxAge:      30,
 	}
 }
 
@@ -52,4 +55,7 @@ func (o *Options) AddFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&o.EnableColor, "log.enable-color", o.EnableColor, "Enable output ansi colors in plain format logs.")
 	fs.StringVar(&o.Format, "log.format", o.Format, "Log output `FORMAT`, support plain or json format.")
 	fs.StringSliceVar(&o.OutputPaths, "log.output-paths", o.OutputPaths, "Output paths of log.")
+	fs.IntVar(&o.MaxSize, "log.max-size", o.MaxSize, "Maximum size per log file in MB.")
+	fs.IntVar(&o.MaxBackups, "log.max-backups", o.MaxBackups, "Maximum number of old log files to keep.")
+	fs.IntVar(&o.MaxAge, "log.max-age", o.MaxAge, "Maximum age in days to retain old log files.")
 }
