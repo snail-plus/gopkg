@@ -2,15 +2,16 @@ package log
 
 import (
 	"fmt"
-	"gopkg.in/natefinch/lumberjack.v2"
 	"sync"
 	"time"
+
+	"github.com/DeRuina/timberjack"
 )
 
 // 自定义按天分割的日志写入器
 type dailyRotator struct {
 	mu         sync.Mutex         // 保证线程安全
-	lj         *lumberjack.Logger // 底层lumberjack写入器
+	lj         *timberjack.Logger // 底层lumberjack写入器
 	currentDay string             // 当前日志文件对应的日期（格式：2006-01-02）
 	logPath    string             // 日志文件路径模板（如：./logs/app-%s.log）
 	nextCheck  int64
@@ -19,16 +20,17 @@ type dailyRotator struct {
 // NewDailyRotator 创建按天分割的日志写入器
 func NewDailyRotator(logPath string, maxSize, maxBackups, maxAge int) *dailyRotator {
 	now := time.Now()
-	currentDay := now.Format("2006-01-02")
+	currentDay := now.Format(time.DateOnly)
 	initialFilename := fmt.Sprintf(logPath, currentDay)
 	nextCheck := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).Add(24 * time.Hour).Unix()
-	lj := &lumberjack.Logger{
-		Filename:   initialFilename,
-		MaxSize:    maxSize,
-		MaxBackups: maxBackups,
-		MaxAge:     maxAge,
-		Compress:   true,
-		LocalTime:  true,
+	lj := &timberjack.Logger{
+		Filename:         initialFilename,
+		MaxSize:          maxSize,
+		MaxBackups:       maxBackups,
+		MaxAge:           maxAge,
+		Compress:         true,
+		LocalTime:        true,
+		BackupTimeFormat: time.DateOnly,
 	}
 
 	return &dailyRotator{
@@ -50,7 +52,7 @@ func (d *dailyRotator) Write(p []byte) (n int, err error) {
 		// 跨天：关闭旧文件，创建新文件
 		_ = d.lj.Close()
 		// 更新当前日期
-		d.currentDay = now.Format("2006-01-02")
+		d.currentDay = now.Format(time.DateOnly)
 		d.lj.Filename = fmt.Sprintf(d.logPath, d.currentDay)
 		// 滚动日志
 		_ = d.lj.Rotate()
