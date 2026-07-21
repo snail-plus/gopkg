@@ -21,16 +21,14 @@ type dailyRotator struct {
 func NewDailyRotator(logPath string, maxSize, maxBackups, maxAge int) *dailyRotator {
 	now := time.Now()
 	currentDay := now.Format(time.DateOnly)
-	initialFilename := fmt.Sprintf(logPath, currentDay)
 	nextCheck := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).Add(24 * time.Hour).Unix()
 	lj := &timberjack.Logger{
-		Filename:         initialFilename,
-		MaxSize:          maxSize,
-		MaxBackups:       maxBackups,
-		MaxAge:           maxAge,
-		Compress:         true,
-		LocalTime:        true,
-		BackupTimeFormat: time.DateOnly,
+		Filename:   logPath,
+		MaxSize:    maxSize,
+		MaxBackups: maxBackups,
+		MaxAge:     maxAge,
+		Compress:   true,
+		LocalTime:  true,
 	}
 
 	return &dailyRotator{

@@ -103,9 +103,9 @@ func newLogger(opts *Options) *zapLogger {
 	if len(opts.OutputPaths) > 0 && opts.OutputPaths[0] != "stdout" {
 		logFileName := opts.OutputPaths[0]
 		splits := strings.SplitN(logFileName, ".", 2)
-		var logPathTemplate = "./logs/app-%s.log"
+		var logPathTemplate = "./logs/app.log"
 		if len(splits) >= 2 {
-			logPathTemplate = "./logs/" + splits[0] + "-%s.log"
+			logPathTemplate = "./logs/" + splits[0] + ".log"
 		}
 
 		// 确保日志目录存在
