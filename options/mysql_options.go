@@ -24,6 +24,7 @@ type MySQLOptions struct {
 	MaxIdleConnections    int           `json:"max-idle-connections,omitempty" mapstructure:"max-idle-connections,omitempty" yaml:"max-idle-connections"`
 	MaxOpenConnections    int           `json:"max-open-connections,omitempty" mapstructure:"max-open-connections" yaml:"max-open-connections"`
 	MaxConnectionLifeTime time.Duration `json:"max-connection-life-time,omitempty" mapstructure:"max-connection-life-time" yaml:"max-connection-life-time"`
+	MaxConnectionIdleTime time.Duration `json:"max-connection-idle-time,omitempty" mapstructure:"max-connection-idle-time" yaml:"max-connection-idle-time"`
 	LogLevel              int           `json:"log-level" mapstructure:"log-level" yaml:"log-level"`
 }
 
@@ -36,7 +37,8 @@ func NewMySQLOptions() *MySQLOptions {
 		Database:              "onex",
 		MaxIdleConnections:    100,
 		MaxOpenConnections:    100,
-		MaxConnectionLifeTime: time.Duration(10) * time.Second,
+		MaxConnectionLifeTime: time.Duration(1) * time.Hour,
+		MaxConnectionIdleTime: time.Duration(30) * time.Minute,
 		LogLevel:              1, // Silent
 	}
 }
@@ -77,6 +79,7 @@ func (o *MySQLOptions) NewDB() (*gorm.DB, error) {
 		MaxIdleConnections:    o.MaxIdleConnections,
 		MaxOpenConnections:    o.MaxOpenConnections,
 		MaxConnectionLifeTime: o.MaxConnectionLifeTime,
+		MaxConnectionIdleTime: o.MaxConnectionLifeTime,
 		Logger:                log.Default().LogMode(gormlogger.LogLevel(o.LogLevel)),
 	}
 
