@@ -47,7 +47,13 @@ func (i *Idempotent) Token(ctx context.Context) string {
 	}
 
 	token := uuid.NewString()
-	i.ops.redis.Set(ctx, fmt.Sprintf("%s_%s", i.ops.prefix, token), true, time.Duration(i.ops.expire)*time.Minute)
+	key := fmt.Sprintf("%s_%s", i.ops.prefix, token)
+	// 写入失败时返回空 token，避免发放一个注定校验失败的 token
+	if err := i.ops.redis.Set(ctx, key, true, time.Duration(i.ops.expire)*time.Minute).Err(); err != nil {
+		log.C(ctx).Errorw(err, "idempotent token set failed")
+		return ""
+	}
+
 	return token
 }
 

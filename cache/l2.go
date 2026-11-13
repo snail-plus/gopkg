@@ -4,6 +4,7 @@ package cache
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/dgraph-io/ristretto"
@@ -31,8 +32,11 @@ func NewL2[T any](remote Cache[T], options ...L2Option) *L2Cache[T] {
 	cfg := &ristretto.Config{}
 	opts.ApplyTo(cfg)
 
-	// This won't return an error because we're passing valid parameters
-	local, _ := ristretto.NewCache(cfg)
+	// 构造失败通常是参数非法，在初始化阶段直接暴露问题，避免运行期 nil panic
+	local, err := ristretto.NewCache(cfg)
+	if err != nil {
+		panic(fmt.Errorf("create ristretto local cache failed: %w", err))
+	}
 	return &L2Cache[T]{
 		opts:   opts,
 		local:  local,
@@ -55,8 +59,18 @@ func (c *L2Cache[T]) GetWithTTL(ctx context.Context, key any) (T, time.Duration,
 			return *new(T), 0, store.ErrKeyNotFound
 		}
 
-		value, _ := c.local.Get(keyFunc(key))
-		return value.(T), ttl, nil
+		raw, found := c.local.Get(keyFunc(key))
+		if !found {
+			return *new(T), 0, store.ErrKeyNotFound
+		}
+
+		// ristretto 存储的是 any，类型不匹配时返回错误而非 panic
+		value, ok := raw.(T)
+		if !ok {
+			return *new(T), 0, fmt.Errorf("local cache value type mismatch: got %T", raw)
+		}
+
+		return value, ttl, nil
 	}
 
 	return c.remote.GetWithTTL(ctx, key)

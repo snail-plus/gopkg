@@ -40,5 +40,12 @@ func (d *dailyRotator) Write(p []byte) (n int, err error) {
 
 // Sync 实现zapcore.WriteSyncer的Sync方法（确保日志刷新到磁盘）
 func (d *dailyRotator) Sync() error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	// timberjack 底层若支持 Sync 则透传，确保缓存日志真正落盘
+	if s, ok := any(d.lj).(interface{ Sync() error }); ok {
+		return s.Sync()
+	}
 	return nil
 }

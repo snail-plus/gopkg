@@ -67,6 +67,33 @@ func GetStartAndEndTimeOfDay(t time.Time) (startTime, endTime time.Time) {
 	return startTime, endTime
 }
 
+// GetStartAndEndTimeOfWeek 根据传入的时间获取这一周的开始时间和结束时间（周一 00:00:00 至周日 23:59:59）
+func GetStartAndEndTimeOfWeek(t time.Time) (startTime, endTime time.Time) {
+	weekday := int(t.Weekday())
+	if weekday == 0 { // 周日
+		weekday = 7
+	}
+
+	// 回退到本周周一的 00:00:00
+	startTime = time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location()).AddDate(0, 0, -(weekday - 1))
+
+	// 加上七天的时间得到本周的结束时间
+	endTime = startTime.AddDate(0, 0, 7).Add(-1 * time.Second)
+
+	return startTime, endTime
+}
+
+// GetStartAndEndTimeOfMonth 根据传入的时间获取这一月开始时间和结束时间（月初 00:00:00 至月末 23:59:59）
+func GetStartAndEndTimeOfMonth(t time.Time) (startTime, endTime time.Time) {
+	// 获取这个时间的当月第一天 00:00:00
+	startTime = time.Date(t.Year(), t.Month(), 1, 0, 0, 0, 0, t.Location())
+
+	// 加一个月的时间得到当月的结束时间（自动处理大小月）
+	endTime = startTime.AddDate(0, 1, 0).Add(-1 * time.Second)
+
+	return startTime, endTime
+}
+
 func SubtractDays(t time.Time, days int) time.Time {
 	// 计算往前推算的天数
 	return t.AddDate(0, 0, -days)

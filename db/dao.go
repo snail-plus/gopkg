@@ -63,7 +63,7 @@ func NewBaseRepo[T schema.Tabler](db *gorm.DB) BaseRepo[T] {
 // Get 根据ID查询
 func (h *BaseRepoImpl[T]) Get(ctx context.Context, id int) (*T, error) {
 	var result T
-	err := h.db.WithContext(ctx).First(&result, id).Error
+	err := h.getDB(ctx).WithContext(ctx).First(&result, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -72,10 +72,9 @@ func (h *BaseRepoImpl[T]) Get(ctx context.Context, id int) (*T, error) {
 
 func (h *BaseRepoImpl[T]) QueryList(ctx context.Context, condition any, order any, args ...interface{}) ([]*T, error) {
 	var data []*T
-	var tmp *T
 	var err error
 
-	db := h.db.WithContext(ctx).Model(tmp)
+	db := h.getDB(ctx).WithContext(ctx).Model(new(T))
 	if condition != nil {
 		db = db.Where(condition, args...)
 	}
@@ -90,7 +89,7 @@ func (h *BaseRepoImpl[T]) QueryList(ctx context.Context, condition any, order an
 
 func (h *BaseRepoImpl[T]) GetOne(ctx context.Context, condition any, args ...interface{}) (*T, error) {
 	var result T
-	err := h.db.WithContext(ctx).Model(&result).Where(condition, args...).First(&result).Error
+	err := h.getDB(ctx).WithContext(ctx).Model(&result).Where(condition, args...).First(&result).Error
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +99,6 @@ func (h *BaseRepoImpl[T]) GetOne(ctx context.Context, condition any, args ...int
 // List 列表
 func (h *BaseRepoImpl[T]) List(ctx context.Context, condition any, page, pageSize int, order any, args ...interface{}) (int64, []*T, error) {
 	var count int64
-	var tmp *T
 	var err error
 	var data []*T
 
@@ -109,20 +107,20 @@ func (h *BaseRepoImpl[T]) List(ctx context.Context, condition any, page, pageSiz
 	}
 
 	if condition == nil {
-		err = h.db.WithContext(ctx).Model(tmp).Count(&count).Error
+		err = h.getDB(ctx).WithContext(ctx).Model(new(T)).Count(&count).Error
 		if err != nil {
 			return 0, nil, err
 		}
 
-		err = h.db.Limit(pageSize).Offset((page - 1) * pageSize).Order(order).Find(&data).Error
+		err = h.getDB(ctx).WithContext(ctx).Limit(pageSize).Offset((page - 1) * pageSize).Order(order).Find(&data).Error
 		return count, data, err
 	} else {
-		err = h.db.WithContext(ctx).Model(tmp).Where(condition, args...).Count(&count).Error
+		err = h.getDB(ctx).WithContext(ctx).Model(new(T)).Where(condition, args...).Count(&count).Error
 		if err != nil {
 			return 0, nil, err
 		}
 
-		err = h.db.Limit(pageSize).Offset((page-1)*pageSize).Where(condition, args...).Order(order).Find(&data).Error
+		err = h.getDB(ctx).WithContext(ctx).Limit(pageSize).Offset((page-1)*pageSize).Where(condition, args...).Order(order).Find(&data).Error
 		return count, data, err
 	}
 
@@ -142,8 +140,9 @@ func (h *BaseRepoImpl[T]) Save(ctx context.Context, value *T) error {
 	return h.getDB(ctx).WithContext(ctx).Save(value).Error
 }
 
+// SaveBatch 保存数据
 func (h *BaseRepoImpl[T]) SaveBatch(ctx context.Context, values []*T) error {
-	return h.getDB(ctx).WithContext(ctx).CreateInBatches(&values, 100).Error
+	return h.getDB(ctx).WithContext(ctx).CreateInBatches(values, 100).Error
 }
 
 // Delete 删除
@@ -156,14 +155,14 @@ func (h *BaseRepoImpl[T]) CustomUpdate(ctx context.Context, sql string, args ...
 	return h.getDB(ctx).WithContext(ctx).Exec(sql, args...).Error
 }
 
-// CustomQuery 执行sql
+// CustomQuery 执行查询sql
 func (h *BaseRepoImpl[T]) CustomQuery(ctx context.Context, sql string, dest interface{}, args ...interface{}) error {
-	return h.db.WithContext(ctx).Raw(sql, args...).Scan(dest).Error
+	return h.getDB(ctx).WithContext(ctx).Raw(sql, args...).Scan(dest).Error
 }
 
 func (h *BaseRepoImpl[T]) CustomCount(ctx context.Context, sql string, args ...interface{}) (int64, error) {
 	var data int64
-	if err := h.db.WithContext(ctx).Raw(sql, args...).Count(&data).Error; err != nil {
+	if err := h.getDB(ctx).WithContext(ctx).Raw(sql, args...).Count(&data).Error; err != nil {
 		return 0, err
 	}
 
@@ -171,33 +170,23 @@ func (h *BaseRepoImpl[T]) CustomCount(ctx context.Context, sql string, args ...i
 }
 
 func (h *BaseRepoImpl[T]) QueryWithScopes(ctx context.Context, dest interface{}, funcs ...func(*gorm.DB) *gorm.DB) error {
-	return h.db.WithContext(ctx).Scopes(funcs...).Find(&dest).Error
+	return h.getDB(ctx).WithContext(ctx).Scopes(funcs...).Find(dest).Error
 }
 
 func (h *BaseRepoImpl[T]) Count(ctx context.Context, value interface{}, condition any, args ...interface{}) (int64, error) {
 	var data int64
-	if err := h.db.WithContext(ctx).Model(value).Where(condition, args...).Count(&data).Error; err != nil {
+	if err := h.getDB(ctx).WithContext(ctx).Model(value).Where(condition, args...).Count(&data).Error; err != nil {
 		return 0, err
 	}
 
 	return data, nil
 }
 
-// ExecInTx 在事务中执行函数，自动处理事务的提交和回滚
+// ExecInTx 在事务中执行函数，自动处理事务的提交和回滚（panic 时也会回滚）。
+// 事务内的操作请直接使用 fn 回调中的 tx；若需要在 repo 其他方法内复用同一事务，
+// 可派生 ctx 后传入 repo 方法，例如 repo.Get(db.WithTx(ctx, tx), id)。
 func (h *BaseRepoImpl[T]) ExecInTx(ctx context.Context, fn func(tx *gorm.DB) error) error {
-
-	tx := h.db.WithContext(WithTx(ctx, h.db)).Begin()
-	if tx.Error != nil {
-		return tx.Error
-	}
-
-	err := fn(tx)
-	if err != nil {
-		_ = tx.Rollback()
-		return err
-	}
-
-	return tx.Commit().Error
+	return h.getDB(ctx).WithContext(ctx).Transaction(fn)
 }
 
 func (h *BaseRepoImpl[T]) GetDb() *gorm.DB {

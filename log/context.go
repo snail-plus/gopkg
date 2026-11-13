@@ -15,39 +15,35 @@ const loggerKeyForGin = "OneXLogger"
 // contextKey is how we find Loggers in a context.Context.
 type contextKey struct{}
 
-// WithContext returns a copy of context in which the log value is set.
-func WithContext(ctx context.Context, keyvals ...any) context.Context {
-	if l := FromContext(ctx); l != nil {
-		return l.(*zapLogger).WithContext(ctx, keyvals...)
-	}
-
-	return std.WithContext(ctx, keyvals...)
-}
-
-func (l *zapLogger) WithContext(ctx context.Context, keyvals ...any) context.Context {
-	with := func(l Logger) context.Context {
-		return context.WithValue(ctx, contextKey{}, l)
-	}
-
-	// In order to be compatible with *gin.Context, the performance loss is acceptable.
-	if c, ok := ctx.(*gin.Context); ok {
-		with = func(l Logger) context.Context {
-			c.Set(loggerKeyForGin, l)
-			return c
-		}
-	}
-
+// fieldsFromKeyvals 将偶数长度的 keyvals 转换为 zap Field 列表.
+func fieldsFromKeyvals(keyvals ...any) []Field {
 	keylen := len(keyvals)
 	if keylen == 0 || keylen%2 != 0 {
-		return with(l)
+		return nil
 	}
 
-	data := make([]zap.Field, 0, (keylen/2)+1)
+	data := make([]zap.Field, 0, keylen/2)
 	for i := 0; i < keylen; i += 2 {
 		data = append(data, zap.Any(fmt.Sprint(keyvals[i]), keyvals[i+1]))
 	}
 
-	return with(l.With(data...))
+	return data
+}
+
+// WithContext returns a copy of context in which the log value is set.
+func WithContext(ctx context.Context, keyvals ...any) context.Context {
+	l := FromContext(ctx)
+	if fields := fieldsFromKeyvals(keyvals...); len(fields) > 0 {
+		l = l.With(fields...)
+	}
+
+	// In order to be compatible with *gin.Context, the performance loss is acceptable.
+	if c, ok := ctx.(*gin.Context); ok {
+		c.Set(loggerKeyForGin, l)
+		return c
+	}
+
+	return context.WithValue(ctx, contextKey{}, l)
 }
 
 // FromContext returns a logger with predefined values from a context.Context.
@@ -64,17 +60,11 @@ func FromContext(ctx context.Context, keyvals ...any) Logger {
 		}
 	}
 
-	keylen := len(keyvals)
-	if keylen == 0 || keylen%2 != 0 {
-		return log
+	if fields := fieldsFromKeyvals(keyvals...); len(fields) > 0 {
+		return log.With(fields...)
 	}
 
-	data := make([]zap.Field, 0, (keylen/2)+1)
-	for i := 0; i < keylen; i += 2 {
-		data = append(data, zap.Any(fmt.Sprint(keyvals[i]), keyvals[i+1]))
-	}
-
-	return log.With(data...)
+	return log
 }
 
 // C represents for `FromContext` with empty keyvals.

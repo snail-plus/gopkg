@@ -17,7 +17,7 @@ var _ IOptions = (*RedisOptions)(nil)
 type RedisOptions struct {
 	Addr         string        `json:"addr" mapstructure:"addr" yaml:"addr"`
 	Username     string        `json:"username" mapstructure:"username" yaml:"username"`
-	Password     string        `json:"password" mapstructure:"password" yaml:"password"`
+	Password     string        `json:"-" mapstructure:"password" yaml:"password"`
 	Database     int           `json:"database" mapstructure:"database" yaml:"database"`
 	MaxRetries   int           `json:"max-retries" mapstructure:"max-retries" yaml:"max-retries"`
 	MinIdleConns int           `json:"min-idle-conns" mapstructure:"min-idle-conns" yaml:"min-idle-conns"`
@@ -64,20 +64,20 @@ func (o *RedisOptions) Validate() []error {
 
 // AddFlags adds flags related to redis storage for a specific APIServer to the specified FlagSet.
 func (o *RedisOptions) AddFlags(fs *pflag.FlagSet, prefixs ...string) {
-	fs.StringVar(&o.Addr, "redis.addr", o.Addr, "Address of your Redis server(ip:port).")
-	fs.StringVar(&o.Username, "redis.username", o.Username, "Username for access to redis service.")
-	fs.StringVar(&o.Password, "redis.password", o.Password, "Optional auth password for redis db.")
-	fs.IntVar(&o.Database, "redis.database", o.Database, "Database to be selected after connecting to the server.")
-	fs.IntVar(&o.MaxRetries, "redis.max-retries", o.MaxRetries, "Maximum number of retries before giving up.")
-	fs.IntVar(&o.MinIdleConns, "redis.min-idle-conns", o.MinIdleConns, ""+
+	fs.StringVar(&o.Addr, join(prefixs...)+"redis.addr", o.Addr, "Address of your Redis server(ip:port).")
+	fs.StringVar(&o.Username, join(prefixs...)+"redis.username", o.Username, "Username for access to redis service.")
+	fs.StringVar(&o.Password, join(prefixs...)+"redis.password", o.Password, "Optional auth password for redis db.")
+	fs.IntVar(&o.Database, join(prefixs...)+"redis.database", o.Database, "Database to be selected after connecting to the server.")
+	fs.IntVar(&o.MaxRetries, join(prefixs...)+"redis.max-retries", o.MaxRetries, "Maximum number of retries before giving up.")
+	fs.IntVar(&o.MinIdleConns, join(prefixs...)+"redis.min-idle-conns", o.MinIdleConns, ""+
 		"Minimum number of idle connections which is useful when establishing new connection is slow.")
-	fs.DurationVar(&o.DialTimeout, "redis.dial-timeout", o.DialTimeout, "Dial timeout for establishing new connections.")
-	fs.DurationVar(&o.ReadTimeout, "redis.read-timeout", o.ReadTimeout, "Timeout for socket reads.")
-	fs.DurationVar(&o.WriteTimeout, "redis.write-timeout", o.WriteTimeout, "Timeout for socket writes.")
-	fs.DurationVar(&o.PoolTimeout, "redis.pool-timeout", o.PoolTimeout, ""+
+	fs.DurationVar(&o.DialTimeout, join(prefixs...)+"redis.dial-timeout", o.DialTimeout, "Dial timeout for establishing new connections.")
+	fs.DurationVar(&o.ReadTimeout, join(prefixs...)+"redis.read-timeout", o.ReadTimeout, "Timeout for socket reads.")
+	fs.DurationVar(&o.WriteTimeout, join(prefixs...)+"redis.write-timeout", o.WriteTimeout, "Timeout for socket writes.")
+	fs.DurationVar(&o.PoolTimeout, join(prefixs...)+"redis.pool-timeout", o.PoolTimeout, ""+
 		"Amount of time client waits for connection if all connections are busy before returning an error.")
-	fs.IntVar(&o.PoolSize, "redis.pool-size", o.PoolSize, "Maximum number of socket connections.")
-	fs.BoolVar(&o.EnableTrace, "redis.enable-trace", o.EnableTrace, "Redis hook tracing (using open telemetry).")
+	fs.IntVar(&o.PoolSize, join(prefixs...)+"redis.pool-size", o.PoolSize, "Maximum number of socket connections.")
+	fs.BoolVar(&o.EnableTrace, join(prefixs...)+"redis.enable-trace", o.EnableTrace, "Redis hook tracing (using open telemetry).")
 }
 
 func (o *RedisOptions) NewClient() (*redis.Client, error) {

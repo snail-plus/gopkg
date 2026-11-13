@@ -72,12 +72,23 @@ func SignalContext(parent context.Context, shutdownDelay time.Duration) (context
 	go func() {
 		sigChan := make(chan os.Signal, 1)
 		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-		sig := <-sigChan
-		log.Infof("received signal: %s, shutting down", sig)
-		if shutdownDelay > 0 {
-			time.Sleep(shutdownDelay)
+		defer signal.Stop(sigChan)
+
+		select {
+		case sig := <-sigChan:
+			log.Infof("received signal: %s, shutting down", sig)
+			if shutdownDelay > 0 {
+				timer := time.NewTimer(shutdownDelay)
+				defer timer.Stop()
+				select {
+				case <-timer.C:
+				case <-ctx.Done():
+				}
+			}
+			cancel()
+		case <-ctx.Done():
+			// parent 或外部 cancel 已触发，直接退出，避免 goroutine 泄漏
 		}
-		cancel()
 	}()
 
 	return ctx, cancel

@@ -190,6 +190,8 @@ func (a *App) buildCommand() {
 // Run is used to launch the application.
 func (a *App) Run() {
 	err := a.cmd.Execute()
+	// os.Exit 不会执行 defer，这里显式刷新日志，避免文件日志丢失
+	log.Sync()
 	if err != nil {
 		log.Errorw(err, "Application startup failed")
 		os.Exit(1)
@@ -271,6 +273,9 @@ func logOptions() *log.Options {
 		Format:            viper.GetString("log.format"),
 		EnableColor:       viper.GetBool("log.enable-color"),
 		OutputPaths:       viper.GetStringSlice("log.output-paths"),
+		MaxSize:           viper.GetInt("log.max-size"),
+		MaxBackups:        viper.GetInt("log.max-backups"),
+		MaxAge:            viper.GetInt("log.max-age"),
 	}
 }
 
@@ -278,4 +283,7 @@ func init() {
 	viper.SetDefault("log.level", "info")
 	viper.SetDefault("log.format", "console")
 	viper.SetDefault("log.output-paths", []string{"stdout"})
+	viper.SetDefault("log.max-size", 100)
+	viper.SetDefault("log.max-backups", 30)
+	viper.SetDefault("log.max-age", 30)
 }

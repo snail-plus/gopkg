@@ -114,6 +114,10 @@ func (i *I18n) Add(f string) {
 	}
 	if info.IsDir() {
 		filepath.Walk(f, func(path string, fi os.FileInfo, errBack error) (err error) {
+			// errBack 不为 nil 时 fi 可能为 nil，必须先返回错误避免 panic
+			if errBack != nil {
+				return errBack
+			}
 			if !fi.IsDir() {
 				i.bundle.LoadMessageFile(path)
 			}

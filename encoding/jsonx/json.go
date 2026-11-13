@@ -53,7 +53,8 @@ func (ct CustomTime) MarshalJSON() ([]byte, error) {
 	if format == "" {
 		format = time.RFC3339 // 默认格式
 	}
-	return []byte(ct.Time.Format(format)), nil
+	// 输出必须是带引号的 JSON 字符串，否则会生成非法 JSON
+	return json.Marshal(ct.Time.Format(format))
 }
 
 // UnmarshalJSON 实现 json.Unmarshaler 接口

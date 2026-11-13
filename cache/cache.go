@@ -57,6 +57,8 @@ type KeyGetter interface {
 // keyFunc returns the cache key for the given key object by returning
 // the key if type is string or by computing a checksum of key structure
 // if its type is other than string.
+// 注意：非 string/KeyGetter 类型依赖 fmt 序列化（map 按 key 排序输出，Go 1.12+ 确定性），
+// 但结构体字段变更、指针值等会导致 key 不稳定，推荐实现 KeyGetter 接口或直接使用 string key。
 func keyFunc(key any) string {
 	switch typed := key.(type) {
 	case string:

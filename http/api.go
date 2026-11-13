@@ -16,7 +16,7 @@ func (r Api) Success(c *gin.Context, data any) {
 }
 
 func (r Api) Failure(c *gin.Context, err error) {
-	log.Infof("Failure: %v", err)
+	log.Errorf("Failure: %v", err)
 
 	// 判断错误类型是不是 SystemError
 	var systemErr *xerrors.SystemError

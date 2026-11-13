@@ -65,9 +65,13 @@ func (c *LoadableCache[T]) Get(ctx context.Context, key any) (T, error) {
 	}
 
 	// Then, put it back in cache
-	c.setChannel <- &loadableKeyValue[T]{key, obj}
+	select {
+	case c.setChannel <- &loadableKeyValue[T]{key, obj}:
+	case <-ctx.Done():
+		// ctx 取消时跳过回填，避免阻塞请求路径
+	}
 
-	return obj, err
+	return obj, nil
 }
 
 // GetWithTTL retrieves the object from the cache with its time to live (TTL) or loads it using the load function if not found.
@@ -86,9 +90,13 @@ func (c *LoadableCache[T]) GetWithTTL(ctx context.Context, key any) (T, time.Dur
 	}
 
 	// Then, put it back in cache
-	c.setChannel <- &loadableKeyValue[T]{key, obj}
+	select {
+	case c.setChannel <- &loadableKeyValue[T]{key, obj}:
+	case <-ctx.Done():
+		// ctx 取消时跳过回填，避免阻塞请求路径
+	}
 
-	return obj, ttl, err
+	return obj, 0, nil
 }
 
 // Set sets a value in available caches.

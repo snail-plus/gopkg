@@ -14,5 +14,10 @@ func (r *PageRequest) AddParam(key string, value interface{}) {
 }
 
 func (r *PageRequest) Offset() int {
-	return (r.PageNum - 1) * r.PageSize
+	// 防御非法分页参数，避免生成负数 offset 导致 SQL 报错
+	pageNum := r.PageNum
+	if pageNum < 1 {
+		pageNum = 1
+	}
+	return (pageNum - 1) * r.PageSize
 }

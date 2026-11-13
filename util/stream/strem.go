@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	"github.com/panjf2000/ants/v2"
+	"github.com/snail-plus/gopkg/log"
 	"github.com/snail-plus/gopkg/util/reflect"
 	"github.com/spf13/cast"
 )
@@ -27,11 +28,28 @@ func init() {
 	}
 }
 
+// submit 将生产任务提交到协程池.
+// pool 饱和导致提交失败时退化为裸 goroutine 执行，保证生产者最终一定会运行并
+// 关闭输出 channel，避免下游 range 永久阻塞造成死锁.
+func submit(produce func()) {
+	if err := pool.Submit(produce); err != nil {
+		log.Warnw("stream goroutine pool saturated, fallback to raw goroutine", "err", err)
+		go produce()
+	}
+}
+
+// drain 消费 channel 中剩余的所有元素，用于提前退出时让上游生产者能正常结束，
+// 避免上游 goroutine 永久阻塞泄漏协程池 worker.
+func drain[T any](ch <-chan T) {
+	for range ch {
+	}
+}
+
 // NewStream creates a new Stream from a slice.
 func NewStream[T any](data []T) *Stream[T] {
 	ch := make(chan T, len(data))
 
-	_ = pool.Submit(func() {
+	submit(func() {
 		for _, v := range data {
 			ch <- v
 		}
@@ -48,7 +66,7 @@ func New[T any](data ...T) *Stream[T] {
 func Generate[T any](ctx context.Context, f func() T) *Stream[T] {
 	ch := make(chan T)
 
-	_ = pool.Submit(func() {
+	submit(func() {
 		for {
 			select {
 			case <-ctx.Done():
@@ -66,7 +84,7 @@ func Generate[T any](ctx context.Context, f func() T) *Stream[T] {
 func Concat[T any](a Stream[T], b Stream[T]) *Stream[T] {
 	ch := make(chan T)
 
-	_ = pool.Submit(func() {
+	submit(func() {
 		slice1 := a.ToSlice()
 		for _, v1 := range slice1 {
 			ch <- v1
@@ -116,7 +134,7 @@ FlatMap Returns a stream consisting of the results of replacing each element of
 func FlatMap[T, R any](stream *Stream[T], mapper MapperFunc[T, R]) *Stream[R] {
 	outCh := make(chan R)
 
-	_ = pool.Submit(func() {
+	submit(func() {
 		defer close(outCh)
 
 		for v := range stream.ch {
@@ -135,7 +153,7 @@ type ToIntFunc[T any] func(T) int
 func (s *Stream[T]) MapToInt(f ToIntFunc[T]) *Stream[int] {
 	ch := make(chan int)
 
-	_ = pool.Submit(func() {
+	submit(func() {
 		for v := range s.ch {
 			ch <- f(v)
 		}
@@ -150,7 +168,7 @@ type ToInt32Func[T any] func(T) int32
 func (s *Stream[T]) MapToInt32(f ToInt32Func[T]) *Stream[int32] {
 	ch := make(chan int32)
 
-	_ = pool.Submit(func() {
+	submit(func() {
 		for v := range s.ch {
 			ch <- f(v)
 		}
@@ -165,7 +183,7 @@ type ToInt64Func[T any] func(T) int64
 func (s *Stream[T]) MapToInt64(f ToInt64Func[T]) *Stream[int64] {
 	ch := make(chan int64)
 
-	_ = pool.Submit(func() {
+	submit(func() {
 		for v := range s.ch {
 			ch <- f(v)
 		}
@@ -180,7 +198,7 @@ type ToFloat32Func[T any] func(T) float32
 func (s *Stream[T]) MapToFloat32(f ToFloat32Func[T]) *Stream[float32] {
 	ch := make(chan float32)
 
-	_ = pool.Submit(func() {
+	submit(func() {
 		for v := range s.ch {
 			ch <- f(v)
 		}
@@ -195,7 +213,7 @@ type ToFloat64Func[T any] func(T) float64
 func (s *Stream[T]) MapToFloat64(f ToFloat64Func[T]) *Stream[float64] {
 	ch := make(chan float64)
 
-	_ = pool.Submit(func() {
+	submit(func() {
 		for v := range s.ch {
 			ch <- f(v)
 		}
@@ -209,7 +227,7 @@ func (s *Stream[T]) MapToFloat64(f ToFloat64Func[T]) *Stream[float64] {
 func (s *Stream[T]) Map(f func(T) T) *Stream[T] {
 	ch := make(chan T)
 
-	_ = pool.Submit(func() {
+	submit(func() {
 		for v := range s.ch {
 			ch <- f(v)
 		}
@@ -230,7 +248,7 @@ func (s *Stream[T]) ForEach(f func(T)) {
 func (s *Stream[T]) Peek(f func(T)) *Stream[T] {
 	ch := make(chan T)
 
-	_ = pool.Submit(func() {
+	submit(func() {
 		for v := range s.ch {
 			f(v)
 			ch <- v
@@ -246,7 +264,7 @@ func (s *Stream[T]) Peek(f func(T)) *Stream[T] {
 func TransformStream[T any, R any](s *Stream[T], f func(T) R) *Stream[R] {
 	ch := make(chan R)
 
-	_ = pool.Submit(func() {
+	submit(func() {
 		for v := range s.ch {
 			ch <- f(v)
 		}
@@ -266,7 +284,7 @@ func Transform[T any, R any](data []T, f func(T) R) *Stream[R] {
 func (s *Stream[T]) Filter(f func(T) bool) *Stream[T] {
 	ch := make(chan T)
 
-	_ = pool.Submit(func() {
+	submit(func() {
 		for v := range s.ch {
 			if f(v) {
 				ch <- v
@@ -278,24 +296,32 @@ func (s *Stream[T]) Filter(f func(T) bool) *Stream[T] {
 	return &Stream[T]{ch: ch}
 }
 
-// AllMatch keeps only the elements that satisfy the given predicate lazily.
+// AllMatch returns whether all elements of this stream match the provided predicate.
 func (s *Stream[T]) AllMatch(f func(T) bool) bool {
+	matched := true
 	for v := range s.ch {
 		if !f(v) {
-			return false
+			matched = false
+			break
 		}
 	}
-	return true
+	// 提前退出时消费完剩余元素，保证上游生产 goroutine 正常退出，避免 worker 泄漏
+	drain(s.ch)
+	return matched
 }
 
-// AnyMatch keeps only the elements that satisfy the given predicate lazily.
+// AnyMatch returns whether any elements of this stream match the provided predicate.
 func (s *Stream[T]) AnyMatch(f func(T) bool) bool {
+	matched := false
 	for v := range s.ch {
 		if f(v) {
-			return true
+			matched = true
+			break
 		}
 	}
-	return false
+	// 提前退出时消费完剩余元素，保证上游生产 goroutine 正常退出，避免 worker 泄漏
+	drain(s.ch)
+	return matched
 }
 
 // NoneMatch Returns whether no elements of this stream match the provided predicate.
@@ -324,7 +350,7 @@ func (s *Stream[T]) Contains(in T) bool {
 func (s *Stream[T]) Limit(n int) *Stream[T] {
 	ch := make(chan T)
 
-	_ = pool.Submit(func() {
+	submit(func() {
 		count := 0
 		for v := range s.ch {
 			if count >= n {
@@ -333,6 +359,8 @@ func (s *Stream[T]) Limit(n int) *Stream[T] {
 			ch <- v
 			count++
 		}
+		// 提前退出后继续消费上游剩余元素，避免上游生产 goroutine 泄漏
+		drain(s.ch)
 		close(ch)
 	})
 
@@ -343,7 +371,7 @@ func (s *Stream[T]) Limit(n int) *Stream[T] {
 func (s *Stream[T]) Skip(n int) *Stream[T] {
 	ch := make(chan T)
 
-	_ = pool.Submit(func() {
+	submit(func() {
 		count := 0
 		for v := range s.ch {
 			if count < n {
@@ -364,7 +392,7 @@ func (s *Stream[T]) DistinctBy(keyFunc func(T) any) *Stream[T] {
 	ch := make(chan T)
 	seen := make(map[any]struct{})
 
-	_ = pool.Submit(func() {
+	submit(func() {
 		for v := range s.ch {
 			key := keyFunc(v)
 			if _, ok := seen[key]; !ok {
@@ -448,7 +476,7 @@ func (s *Stream[T]) Random(size ...uint) *Stream[T] {
 	indices := rand.Perm(len(data))[:n] // Generate a random permutation of indices and slice to desired size
 
 	resultCh := make(chan T)
-	_ = pool.Submit(func() {
+	submit(func() {
 		for _, idx := range indices {
 			resultCh <- data[idx] // Send the randomly selected elements to the result channel
 		}
@@ -638,7 +666,7 @@ func (s *Stream[T]) Distinct() *Stream[T] {
 	ch := make(chan T)
 	seen := make(map[any]struct{})
 
-	_ = pool.Submit(func() {
+	submit(func() {
 		for v := range s.ch {
 			if _, ok := seen[v]; !ok {
 				seen[v] = struct{}{}
@@ -656,13 +684,15 @@ func (s *Stream[T]) Distinct() *Stream[T] {
 func (s *Stream[T]) TakeWhile(f func(T) bool) *Stream[T] {
 	ch := make(chan T)
 
-	_ = pool.Submit(func() {
+	submit(func() {
 		for v := range s.ch {
 			if !f(v) {
 				break
 			}
 			ch <- v
 		}
+		// 提前退出后继续消费上游剩余元素，避免上游生产 goroutine 泄漏
+		drain(s.ch)
 		close(ch)
 	})
 
@@ -674,7 +704,7 @@ func (s *Stream[T]) TakeWhile(f func(T) bool) *Stream[T] {
 func (s *Stream[T]) DropWhile(f func(T) bool) *Stream[T] {
 	ch := make(chan T)
 
-	_ = pool.Submit(func() {
+	submit(func() {
 		dropping := true
 		for v := range s.ch {
 			if dropping && !f(v) {
@@ -698,7 +728,7 @@ type Int interface {
 func Range[T Int](start, end T) *Stream[T] {
 	ch := make(chan T)
 
-	_ = pool.Submit(func() {
+	submit(func() {
 		for i := start; i < end; i++ {
 			ch <- i
 		}

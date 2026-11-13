@@ -4,6 +4,7 @@ package cache
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/snail-plus/gopkg/cache/store"
@@ -22,30 +23,34 @@ func New[T any](store store.Store) *DelegateCache[T] {
 
 // Get returns the obj stored in cache if it exists.
 func (c *DelegateCache[T]) Get(ctx context.Context, key any) (T, error) {
+	var zero T
+
 	value, err := c.store.Get(ctx, keyFunc(key))
 	if err != nil {
-		return *new(T), err
+		return zero, err
 	}
 
 	if v, ok := value.(T); ok {
 		return v, nil
 	}
 
-	return *new(T), nil
+	return zero, fmt.Errorf("cached value type mismatch: got %T, want %T", value, zero)
 }
 
 // GetWithTTL returns the obj stored in cache and its corresponding TTL.
 func (c *DelegateCache[T]) GetWithTTL(ctx context.Context, key any) (T, time.Duration, error) {
+	var zero T
+
 	value, duration, err := c.store.GetWithTTL(ctx, keyFunc(key))
 	if err != nil {
-		return *new(T), duration, err
+		return zero, duration, err
 	}
 
 	if v, ok := value.(T); ok {
 		return v, duration, nil
 	}
 
-	return *new(T), duration, nil
+	return zero, duration, fmt.Errorf("cached value type mismatch: got %T, want %T", value, zero)
 }
 
 // Set populates the cache item using the given key.

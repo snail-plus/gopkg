@@ -17,7 +17,8 @@ type Store interface {
 	Set(ctx context.Context, key any, value any) error
 	SetWithTTL(ctx context.Context, key any, value any, ttl time.Duration) error
 	Del(ctx context.Context, key any) error
-	// Clear removes items that have an expired TTL.
+	// Clear resets all data in the store.
+	// 注意：对于 Redis 等共享存储，这会清空整个实例，请谨慎使用。
 	Clear(ctx context.Context) error
 	Wait(ctx context.Context)
 }

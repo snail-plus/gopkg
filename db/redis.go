@@ -24,7 +24,7 @@ type RedisOptions struct {
 	PoolSize     int
 }
 
-// NewRedis create a new gorm db instance with the given options.
+// NewRedis create a new redis client with the given options.
 func NewRedis(opts *RedisOptions) (*redis.Client, error) {
 	options := &redis.Options{
 		Addr:         opts.Addr,
@@ -42,8 +42,10 @@ func NewRedis(opts *RedisOptions) (*redis.Client, error) {
 
 	rdb := redis.NewClient(options)
 
-	// check redis if is ok
-	if _, err := rdb.Ping(context.Background()).Result(); err != nil {
+	// check redis if is ok，设置超时避免连接异常时无限阻塞
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if _, err := rdb.Ping(ctx).Result(); err != nil {
 		return nil, err
 	}
 

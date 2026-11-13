@@ -7,6 +7,7 @@ package log
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -41,8 +42,16 @@ type Logger interface {
 
 // zapLogger 是 Logger 接口的具体实现. 它底层封装了 zap.Logger.
 type zapLogger struct {
-	z    *zap.Logger
-	opts *Options
+	z         *zap.Logger
+	s         *zap.SugaredLogger
+	sugarOnce sync.Once
+	opts      *Options
+}
+
+// sugar 返回缓存的 SugaredLogger，避免每次调用都重新创建.
+func (l *zapLogger) sugar() *zap.SugaredLogger {
+	l.sugarOnce.Do(func() { l.s = l.z.Sugar() })
+	return l.s
 }
 
 // 确保 zapLogger 实现了 Logger 接口. 以下变量赋值，可以使错误在编译期被发现.
@@ -102,16 +111,13 @@ func newLogger(opts *Options) *zapLogger {
 
 	if len(opts.OutputPaths) > 0 && opts.OutputPaths[0] != "stdout" {
 		logFileName := opts.OutputPaths[0]
-		splits := strings.SplitN(logFileName, ".", 2)
-		var logPathTemplate = "./logs/app.log"
-		if len(splits) >= 2 {
-			logPathTemplate = "./logs/" + splits[0] + ".log"
-		}
+		// 保持历史行为：日志统一写入 ./logs 目录，文件名取自配置路径的最后一段（去掉扩展名），
+		// 避免 `logs/app.log` 这类路径被拼接成 `./logs/logs/app.log`
+		base := filepath.Base(logFileName)
+		logPathTemplate := filepath.Join("./logs", strings.TrimSuffix(base, filepath.Ext(base))+".log")
 
 		// 确保日志目录存在
-		if _, eErr := os.Stat("./logs"); os.IsNotExist(eErr) {
-			_ = os.Mkdir("./logs", 0755)
-		}
+		_ = os.MkdirAll("./logs", 0755)
 
 		// 创建按天分割的写入器
 		dailyWriter := NewDailyRotator(logPathTemplate, opts.MaxSize, opts.MaxBackups, opts.MaxAge)
@@ -171,7 +177,7 @@ func Debugf(format string, args ...any) {
 }
 
 func (l *zapLogger) Debugf(format string, args ...any) {
-	l.z.Sugar().Debugf(format, args...)
+	l.sugar().Debugf(format, args...)
 }
 
 // Debugw 输出 debug 级别的日志.
@@ -180,7 +186,7 @@ func Debugw(msg string, keyvals ...any) {
 }
 
 func (l *zapLogger) Debugw(msg string, keyvals ...any) {
-	l.z.Sugar().Debugw(msg, keyvals...)
+	l.sugar().Debugw(msg, keyvals...)
 }
 
 // Infof 输出 info 级别的日志.
@@ -193,11 +199,11 @@ func ErrorS(err error, format string, args ...any) {
 }
 
 func InfoS(format string, args ...any) {
-	std.Errorf(format, args...)
+	std.Infof(format, args...)
 }
 
 func (l *zapLogger) Infof(msg string, keyvals ...any) {
-	l.z.Sugar().Infof(msg, keyvals...)
+	l.sugar().Infof(msg, keyvals...)
 }
 
 // Infow 输出 info 级别的日志.
@@ -206,7 +212,7 @@ func Infow(msg string, keyvals ...any) {
 }
 
 func (l *zapLogger) Infow(msg string, keyvals ...any) {
-	l.z.Sugar().Infow(msg, keyvals...)
+	l.sugar().Infow(msg, keyvals...)
 }
 
 // Warnf 输出 warning 级别的日志.
@@ -215,7 +221,7 @@ func Warnf(format string, args ...any) {
 }
 
 func (l *zapLogger) Warnf(format string, args ...any) {
-	l.z.Sugar().Warnf(format, args...)
+	l.sugar().Warnf(format, args...)
 }
 
 // Warnw 输出 warning 级别的日志.
@@ -224,7 +230,7 @@ func Warnw(msg string, keyvals ...any) {
 }
 
 func (l *zapLogger) Warnw(msg string, keyvals ...any) {
-	l.z.Sugar().Warnw(msg, keyvals...)
+	l.sugar().Warnw(msg, keyvals...)
 }
 
 // Errorf 输出 error 级别的日志.
@@ -233,7 +239,7 @@ func Errorf(format string, args ...any) {
 }
 
 func (l *zapLogger) Errorf(format string, args ...any) {
-	l.z.Sugar().Errorf(format, args...)
+	l.sugar().Errorf(format, args...)
 }
 
 // Errorw 输出 error 级别的日志.
@@ -242,7 +248,7 @@ func Errorw(err error, msg string, keyvals ...any) {
 }
 
 func (l *zapLogger) Errorw(err error, msg string, keyvals ...any) {
-	l.z.Sugar().Errorw(msg, append(keyvals, "err", err)...)
+	l.sugar().Errorw(msg, append(keyvals, "err", err)...)
 }
 
 // Panicf 输出 panic 级别的日志.
@@ -251,7 +257,7 @@ func Panicf(format string, args ...any) {
 }
 
 func (l *zapLogger) Panicf(format string, args ...any) {
-	l.z.Sugar().Panicf(format, args...)
+	l.sugar().Panicf(format, args...)
 }
 
 // Panicw 输出 panic 级别的日志.
@@ -260,7 +266,7 @@ func Panicw(msg string, keyvals ...any) {
 }
 
 func (l *zapLogger) Panicw(msg string, keyvals ...any) {
-	l.z.Sugar().Panicw(msg, keyvals...)
+	l.sugar().Panicw(msg, keyvals...)
 }
 
 // Fatalf 输出 fatal 级别的日志.
@@ -269,7 +275,7 @@ func Fatalf(format string, args ...any) {
 }
 
 func (l *zapLogger) Fatalf(format string, args ...any) {
-	l.z.Sugar().Fatalf(format, args...)
+	l.sugar().Fatalf(format, args...)
 }
 
 // Fatalw 输出 fatal 级别的日志.
@@ -278,7 +284,7 @@ func Fatalw(msg string, keyvals ...any) {
 }
 
 func (l *zapLogger) Fatalw(msg string, keyvals ...any) {
-	l.z.Sugar().Fatalw(msg, keyvals...)
+	l.sugar().Fatalw(msg, keyvals...)
 }
 
 func With(fields ...Field) Logger {
@@ -312,7 +318,11 @@ func (l *zapLogger) AddCallerSkip(skip int) Logger {
 }
 
 // clone 深度拷贝 zapLogger.
+// 子 logger 需要基于新的 z 重新构建 SugaredLogger，否则 With/AddCallerSkip 等变更不会生效.
+// 注意逐字段赋值，避免拷贝内嵌的 sync.Once（vet 会报 copylocks）.
 func (l *zapLogger) clone() *zapLogger {
-	copied := *l
-	return &copied
+	return &zapLogger{
+		z:    l.z,
+		opts: l.opts,
+	}
 }

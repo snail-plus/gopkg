@@ -49,15 +49,15 @@ func (l *zapLogger) LogMode(level gormlogger.LogLevel) gormlogger.Interface {
 }
 
 func (l *zapLogger) Info(ctx context.Context, msg string, keyvals ...any) {
-	l.z.Sugar().Infof(infoStr+msg, append([]any{fileWithLineNum()}, keyvals...)...)
+	l.sugar().Infof(infoStr+msg, append([]any{fileWithLineNum()}, keyvals...)...)
 }
 
 func (l *zapLogger) Warn(ctx context.Context, msg string, keyvals ...any) {
-	l.z.Sugar().Warnf(warnStr+msg, append([]any{fileWithLineNum()}, keyvals...)...)
+	l.sugar().Warnf(warnStr+msg, append([]any{fileWithLineNum()}, keyvals...)...)
 }
 
 func (l *zapLogger) Error(ctx context.Context, msg string, keyvals ...any) {
-	l.z.Sugar().Errorf(errStr+msg, append([]any{fileWithLineNum()}, keyvals...)...)
+	l.sugar().Errorf(errStr+msg, append([]any{fileWithLineNum()}, keyvals...)...)
 }
 
 func (l *zapLogger) Trace(ctx context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
@@ -70,24 +70,24 @@ func (l *zapLogger) Trace(ctx context.Context, begin time.Time, fc func() (sql s
 	case err != nil && levelM[l.opts.Level] >= gormlogger.Error:
 		sql, rows := fc()
 		if rows == -1 {
-			l.z.Sugar().Errorf(traceErrStr, fileWithLineNum(), err, float64(elapsed.Nanoseconds())/1e6, "-", sql)
+			l.sugar().Errorf(traceErrStr, fileWithLineNum(), err, float64(elapsed.Nanoseconds())/1e6, "-", sql)
 		} else {
-			l.z.Sugar().Errorf(traceErrStr, fileWithLineNum(), err, float64(elapsed.Nanoseconds())/1e6, rows, sql)
+			l.sugar().Errorf(traceErrStr, fileWithLineNum(), err, float64(elapsed.Nanoseconds())/1e6, rows, sql)
 		}
 	case elapsed > slowThreshold && slowThreshold != 0 && levelM[l.opts.Level] >= gormlogger.Warn:
 		sql, rows := fc()
 		slowLog := fmt.Sprintf("SLOW SQL >= %v", slowThreshold)
 		if rows == -1 {
-			l.z.Sugar().Warnf(traceWarnStr, fileWithLineNum(), slowLog, float64(elapsed.Nanoseconds())/1e6, "-", sql)
+			l.sugar().Warnf(traceWarnStr, fileWithLineNum(), slowLog, float64(elapsed.Nanoseconds())/1e6, "-", sql)
 		} else {
-			l.z.Sugar().Warnf(traceWarnStr, fileWithLineNum(), slowLog, float64(elapsed.Nanoseconds())/1e6, rows, sql)
+			l.sugar().Warnf(traceWarnStr, fileWithLineNum(), slowLog, float64(elapsed.Nanoseconds())/1e6, rows, sql)
 		}
 	case levelM[l.opts.Level] >= gormlogger.Info:
 		sql, rows := fc()
 		if rows == -1 {
-			l.z.Sugar().Infof(traceStr, fileWithLineNum(), float64(elapsed.Nanoseconds())/1e6, "-", sql)
+			l.sugar().Infof(traceStr, fileWithLineNum(), float64(elapsed.Nanoseconds())/1e6, "-", sql)
 		} else {
-			l.z.Sugar().Infof(traceStr, fileWithLineNum(), float64(elapsed.Nanoseconds())/1e6, rows, sql)
+			l.sugar().Infof(traceStr, fileWithLineNum(), float64(elapsed.Nanoseconds())/1e6, rows, sql)
 		}
 	}
 }

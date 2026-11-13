@@ -18,7 +18,12 @@ func (e *SystemError) Error() string {
 	return fmt.Sprintf("code=%d, message=%s", e.Code, e.Message)
 }
 
-// NewSystemError 是一个创建并返回 *MyCustomError 的函数
+// Unwrap 返回包装的底层错误（含堆栈），支持 errors.Is / errors.As 链式判断.
+func (e *SystemError) Unwrap() error {
+	return e.err
+}
+
+// NewSystemError 是一个创建并返回 *SystemError 的函数
 func NewSystemError(code int, message string) *SystemError {
 	cause := errors.New(message)
 	err := errors.WithStack(cause)

@@ -21,7 +21,7 @@ type MySQLOptions struct {
 	Username              string        `json:"username,omitempty" mapstructure:"username" yaml:"username"`
 	Password              string        `json:"-" mapstructure:"password" yaml:"password"`
 	Database              string        `json:"database" mapstructure:"database" yaml:"database"`
-	MaxIdleConnections    int           `json:"max-idle-connections,omitempty" mapstructure:"max-idle-connections,omitempty" yaml:"max-idle-connections"`
+	MaxIdleConnections    int           `json:"max-idle-connections,omitempty" mapstructure:"max-idle-connections" yaml:"max-idle-connections"`
 	MaxOpenConnections    int           `json:"max-open-connections,omitempty" mapstructure:"max-open-connections" yaml:"max-open-connections"`
 	MaxConnectionLifeTime time.Duration `json:"max-connection-life-time,omitempty" mapstructure:"max-connection-life-time" yaml:"max-connection-life-time"`
 	MaxConnectionIdleTime time.Duration `json:"max-connection-idle-time,omitempty" mapstructure:"max-connection-idle-time" yaml:"max-connection-idle-time"`
@@ -59,7 +59,7 @@ func (o *MySQLOptions) AddFlags(fs *pflag.FlagSet, prefixs ...string) {
 		"Password for access to mysql, should be used pair with password.")
 	fs.StringVar(&o.Database, join(prefixs...)+"db.database", o.Database, ""+
 		"Database name for the server to use.")
-	fs.IntVar(&o.MaxIdleConnections, join(prefixs...)+"db.max-idle-connections", o.MaxOpenConnections, ""+
+	fs.IntVar(&o.MaxIdleConnections, join(prefixs...)+"db.max-idle-connections", o.MaxIdleConnections, ""+
 		"Maximum idle connections allowed to connect to mysql.")
 	fs.IntVar(&o.MaxOpenConnections, join(prefixs...)+"db.max-open-connections", o.MaxOpenConnections, ""+
 		"Maximum open connections allowed to connect to mysql.")
@@ -79,7 +79,7 @@ func (o *MySQLOptions) NewDB() (*gorm.DB, error) {
 		MaxIdleConnections:    o.MaxIdleConnections,
 		MaxOpenConnections:    o.MaxOpenConnections,
 		MaxConnectionLifeTime: o.MaxConnectionLifeTime,
-		MaxConnectionIdleTime: o.MaxConnectionLifeTime,
+		MaxConnectionIdleTime: o.MaxConnectionIdleTime,
 		Logger:                log.Default().LogMode(gormlogger.LogLevel(o.LogLevel)),
 	}
 
