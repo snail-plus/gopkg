@@ -33,6 +33,27 @@ func Subscribe[T any](eb *EventBus, topic string) <-chan T {
 	return subscriberCh
 }
 
+// Unsubscribe 是一个顶层泛型函数，用于取消订阅
+// 匹配规则：同类型且底层 channel 一致。返回是否成功移除。
+// 注意：不会关闭 channel，避免与 Publish 竞争导致向已关闭的 channel 发送；
+// 取消后不再有新事件写入，订阅方可通过 context 或轮询结束 range。
+func Unsubscribe[T any](eb *EventBus, topic string, ch <-chan T) bool {
+	eb.mu.Lock()
+	defer eb.mu.Unlock()
+
+	subs := eb.topics[topic]
+	for i, subscriberAny := range subs {
+		subscriber, ok := subscriberAny.(chan T)
+		if !ok || subscriber != ch {
+			continue
+		}
+		subs = append(subs[:i], subs[i+1:]...)
+		eb.topics[topic] = subs
+		return true
+	}
+	return false
+}
+
 // Publish 是一个顶层泛型函数，用于发布事件
 func Publish[T any](eb *EventBus, topic string, event T) {
 	// 持有快照后立即释放读锁；Subscribe 的 append 不会影响已取出的切片
