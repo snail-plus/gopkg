@@ -41,13 +41,18 @@ func (o *EtcdOptions) Validate() []error {
 		errs = append(errs, fmt.Errorf("--etcd.dial-timeout cannot be negative"))
 	}
 
-	errs = append(errs, o.TLSOptions.Validate()...)
+	if o.TLSOptions != nil {
+		errs = append(errs, o.TLSOptions.Validate()...)
+	}
 
 	return errs
 }
 
 // AddFlags adds flags related to redis storage for a specific APIServer to the specified FlagSet.
 func (o *EtcdOptions) AddFlags(fs *pflag.FlagSet, prefixs ...string) {
+	if o.TLSOptions == nil {
+		o.TLSOptions = NewTLSOptions()
+	}
 	o.TLSOptions.AddFlags(fs, "etcd")
 
 	fs.StringSliceVar(&o.Endpoints, "etcd.endpoints", o.Endpoints, "Endpoints of etcd cluster.")

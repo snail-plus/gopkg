@@ -6,6 +6,7 @@ package file
 
 import (
 	"archive/zip"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -21,13 +22,19 @@ import (
 
 // FileType uses the filetype package to determine the given file path's type.
 func FileType(filePath string) (types.Type, error) {
-	file, _ := os.Open(filePath)
+	file, err := os.Open(filePath)
+	if err != nil {
+		return types.Unknown, err
+	}
+	defer file.Close()
 
 	// We only have to pass the file header = first 261 bytes
 	head := make([]byte, 261)
-	_, _ = file.Read(head)
-
-	return filetype.Match(head)
+	n, err := file.Read(head)
+	if err != nil && !errors.Is(err, io.EOF) {
+		return types.Unknown, err
+	}
+	return filetype.Match(head[:n])
 }
 
 // FileExists returns true if the given path exists.
@@ -41,10 +48,12 @@ func FileExists(path string) (bool, error) {
 
 // DirExists returns true if the given path exists and is a directory.
 func DirExists(path string) (bool, error) {
-	exists, _ := FileExists(path)
-	fileInfo, _ := os.Stat(path)
-	if !exists || !fileInfo.IsDir() {
-		return false, fmt.Errorf("path either doesn't exist, or is not a directory <%s>", path)
+	fileInfo, err := os.Stat(path)
+	if err != nil {
+		return false, err
+	}
+	if !fileInfo.IsDir() {
+		return false, fmt.Errorf("path is not a directory <%s>", path)
 	}
 	return true, nil
 }

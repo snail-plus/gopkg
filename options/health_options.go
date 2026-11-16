@@ -4,8 +4,10 @@
 package options
 
 import (
+	"errors"
 	"net/http"
 	"net/http/pprof"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/spf13/pflag"
@@ -46,19 +48,38 @@ func (o *HealthOptions) AddFlags(fs *pflag.FlagSet, prefixs ...string) {
 	fs.StringVar(&o.HealthCheckAddress, "health.check-address", o.HealthCheckAddress, "Specifies liveness health check bind address.")
 }
 
-func (o *HealthOptions) ServeHealthCheck() {
+// ServeHealthCheck 启动健康检查服务。返回 error 而非调用 Fatalf，
+// 避免作为库使用时直接终止宿主进程。
+func (o *HealthOptions) ServeHealthCheck() error {
 	r := mux.NewRouter()
 
 	r.HandleFunc(o.HealthCheckPath, handler).Methods(http.MethodGet)
 	if o.HTTPProfile {
+		r.HandleFunc("/debug/pprof/", pprof.Index)
+		r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
 		r.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
 		r.HandleFunc("/debug/pprof/{_:.*}", pprof.Index)
+		log.Warnw("pprof is enabled; ensure the health check address is not publicly reachable",
+			"addr", o.HealthCheckAddress)
+	}
+
+	server := &http.Server{
+		Addr:              o.HealthCheckAddress,
+		Handler:           r,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       10 * time.Second,
+		WriteTimeout:      10 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
 	log.Infow("Starting health check server", "path", o.HealthCheckPath, "addr", o.HealthCheckAddress)
-	if err := http.ListenAndServe(o.HealthCheckAddress, r); err != nil {
-		log.Fatalf("Error serving health check endpoint: %v", err)
+	if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Errorf("Error serving health check endpoint: %v", err)
+		return err
 	}
+	return nil
 }
 
 func handler(rw http.ResponseWriter, r *http.Request) {

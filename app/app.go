@@ -187,21 +187,23 @@ func (a *App) buildCommand() {
 	a.cmd = cmd
 }
 
-// Run is used to launch the application.
-func (a *App) Run() {
+// Run 启动应用并返回执行结果。由调用方决定进程退出码，
+// 库代码不调用 os.Exit，以免跳过 defer 并杀死宿主进程。
+func (a *App) Run() error {
 	err := a.cmd.Execute()
-	// os.Exit 不会执行 defer，这里显式刷新日志，避免文件日志丢失
 	log.Sync()
 	if err != nil {
 		log.Errorw(err, "Application startup failed")
-		os.Exit(1)
+		return err
 	}
-	os.Exit(0)
+	return nil
 }
 
 func (a *App) runCommand(cmd *cobra.Command, args []string) error {
-	// display application version information
-	version.PrintAndExitIfRequested(a.name)
+	// 请求版本信息时直接返回，由调用方决定进程退出码
+	if version.PrintVersionIfRequested(a.name) {
+		return nil
+	}
 
 	if err := viper.BindPFlags(cmd.Flags()); err != nil {
 		return err
@@ -213,12 +215,12 @@ func (a *App) runCommand(cmd *cobra.Command, args []string) error {
 		}
 
 		// set default options
-		if err := a.options.Complete(); err != nil {
+		if err := completeOptions(a.options); err != nil {
 			return err
 		}
 
 		// validate options
-		if err := a.options.Validate(); err != nil {
+		if err := validateOptions(a.options); err != nil {
 			return err
 		}
 	}
@@ -233,7 +235,8 @@ func (a *App) runCommand(cmd *cobra.Command, args []string) error {
 		if !a.noConfig {
 			PrintConfig()
 		} else if a.options != nil {
-			log.Infof("options: %v", cmd.Flags())
+			// 不打印 flag 值，避免口令/密钥等敏感配置进入日志
+			log.Infof("options: %d flags registered", cmd.Flags().NFlag())
 		}
 	}
 

@@ -15,6 +15,7 @@ import (
 type RedisSource struct {
 	ctx     context.Context
 	redisdb *redis.Client
+	pubsub  *redis.PubSub
 	channel string
 	out     chan any
 }
@@ -25,14 +26,16 @@ func NewRedisSource(ctx context.Context, config *redis.Options, channel string) 
 	pubsub := redisdb.Subscribe(ctx, channel)
 
 	// Wait for a confirmation that subscription is created before publishing anything
-	_, err := pubsub.Receive(ctx)
-	if err != nil {
+	if _, err := pubsub.Receive(ctx); err != nil {
+		_ = pubsub.Close()
+		_ = redisdb.Close()
 		return nil, err
 	}
 
 	source := &RedisSource{
 		ctx:     ctx,
 		redisdb: redisdb,
+		pubsub:  pubsub,
 		channel: channel,
 		out:     make(chan any),
 	}
@@ -56,6 +59,7 @@ loop:
 
 	log.Printf("Closing redis consumer")
 	close(rs.out)
+	_ = rs.pubsub.Close()
 	_ = rs.redisdb.Close()
 }
 

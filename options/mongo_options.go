@@ -60,6 +60,9 @@ func (o *MongoOptions) Validate() []error {
 
 // AddFlags adds flags related to redis storage for a specific APIServer to the specified FlagSet.
 func (o *MongoOptions) AddFlags(fs *pflag.FlagSet, prefixs ...string) {
+	if o.TLSOptions == nil {
+		o.TLSOptions = NewTLSOptions()
+	}
 	o.TLSOptions.AddFlags(fs, "mongo")
 
 	fs.DurationVar(&o.Timeout, "mongo.timeout", o.Timeout, "Timeout is the maximum amount of time a dial will wait for a connect to complete.")
@@ -105,6 +108,7 @@ func (o *MongoOptions) NewClient() (*mongo.Client, error) {
 
 	// Ping the MongoDB server to check the connection
 	if err := client.Ping(ctx, readpref.Primary()); err != nil {
+		_ = client.Disconnect(context.Background())
 		return nil, err
 	}
 

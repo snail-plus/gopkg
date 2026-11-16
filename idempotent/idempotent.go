@@ -59,8 +59,9 @@ func (i *Idempotent) Token(ctx context.Context) string {
 
 func (i *Idempotent) Check(ctx context.Context, token string) bool {
 	if i.ops.redis == nil {
-		log.C(ctx).Warnw("please enable redis, otherwise the idempotent is invalid")
-		return true
+		// fail-closed：缺少 Redis 时拒绝请求，避免幂等保护被静默绕过
+		log.C(ctx).Warnw("redis is not configured; rejecting idempotency check")
+		return false
 	}
 
 	res, err := i.ops.redis.Eval(ctx, lua, []string{fmt.Sprintf("%s_%s", i.ops.prefix, token)}).Result()

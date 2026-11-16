@@ -35,24 +35,43 @@ func GetLocalIP() string {
 	return "127.0.0.1"
 }
 
-// RemoteIP returns the remote ip of the request.
+// RemoteIP 返回请求的客户端 IP。
+// 出于安全考虑，默认只使用 TCP 连接对端地址，不信任客户端可伪造的
+// X-Forwarded-For / X-Real-IP / X-Client-IP 头。若应用部署在可信反向代理之后，
+// 应使用 RemoteIPFromProxy 并确认代理会覆盖这些头。
 func RemoteIP(req *http.Request) string {
-	remoteAddr := req.RemoteAddr
-	if ip := req.Header.Get(XClientIP); ip != "" {
-		remoteAddr = ip
-	} else if ip := req.Header.Get(XRealIP); ip != "" {
-		remoteAddr = ip
-	} else if ip = req.Header.Get(XForwardedFor); ip != "" {
-		remoteAddr = ip
-	} else {
-		remoteAddr, _, _ = net.SplitHostPort(remoteAddr)
+	host, _, err := net.SplitHostPort(req.RemoteAddr)
+	if err != nil {
+		host = req.RemoteAddr
 	}
+	return normalizeIP(host)
+}
 
-	if remoteAddr == "::1" {
-		remoteAddr = "127.0.0.1"
+// RemoteIPFromProxy 在请求确实来自可信代理时使用：从代理注入的头中解析客户端 IP。
+// X-Forwarded-For 取最左侧地址，并校验是否为合法 IP；无法解析时回退到 RemoteIP。
+func RemoteIPFromProxy(req *http.Request) string {
+	if v := req.Header.Get(XForwardedFor); v != "" {
+		if idx := strings.IndexByte(v, ','); idx >= 0 {
+			v = v[:idx]
+		}
+		v = strings.TrimSpace(v)
+		if net.ParseIP(v) != nil {
+			return normalizeIP(v)
+		}
 	}
+	for _, name := range []string{XRealIP, XClientIP} {
+		if v := strings.TrimSpace(req.Header.Get(name)); v != "" && net.ParseIP(v) != nil {
+			return normalizeIP(v)
+		}
+	}
+	return RemoteIP(req)
+}
 
-	return remoteAddr
+func normalizeIP(ip string) string {
+	if ip == "::1" {
+		return "127.0.0.1"
+	}
+	return ip
 }
 
 type IpFilter func(net.Interface, *net.IPNet) bool

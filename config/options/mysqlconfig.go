@@ -18,7 +18,7 @@ func BindMySQLFlags(m *config.MySQLConfiguration, fs *pflag.FlagSet) {
 		"Password for access to mysql, should be used pair with password.")
 	fs.StringVar(&m.Database, "mysql-database", m.Database, ""+
 		"Database name for the server to use.")
-	fs.Int32Var(&m.MaxIdleConnections, "mysql-max-idle-connections", m.MaxOpenConnections, ""+
+	fs.Int32Var(&m.MaxIdleConnections, "mysql-max-idle-connections", m.MaxIdleConnections, ""+
 		"Maximum idle connections allowed to connect to mysql.")
 	fs.Int32Var(&m.MaxOpenConnections, "mysql-max-open-connections", m.MaxOpenConnections, ""+
 		"Maximum open connections allowed to connect to mysql.")

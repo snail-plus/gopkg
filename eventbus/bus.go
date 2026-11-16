@@ -47,8 +47,11 @@ func Unsubscribe[T any](eb *EventBus, topic string, ch <-chan T) bool {
 		if !ok || subscriber != ch {
 			continue
 		}
-		subs = append(subs[:i], subs[i+1:]...)
-		eb.topics[topic] = subs
+		// 复制而非原地删除，避免并发 Publish 持有的切片快照被修改
+		newSubs := make([]any, 0, len(subs)-1)
+		newSubs = append(newSubs, subs[:i]...)
+		newSubs = append(newSubs, subs[i+1:]...)
+		eb.topics[topic] = newSubs
 		return true
 	}
 	return false

@@ -29,6 +29,8 @@ type cacheWrapper[T any] struct {
 type ChainCache[T any] struct {
 	caches     []*cacheWrapper[T]
 	setChannel chan *chainKeyValue[T]
+	done       chan struct{}
+	closeOnce  sync.Once
 	wg         sync.WaitGroup
 }
 
@@ -44,6 +46,7 @@ func NewChain[T any](caches ...Cache[T]) *ChainCache[T] {
 	chain := &ChainCache[T]{
 		caches:     wrappers,
 		setChannel: make(chan *chainKeyValue[T], 10000),
+		done:       make(chan struct{}),
 	}
 
 	chain.wg.Add(1)
@@ -52,26 +55,44 @@ func NewChain[T any](caches ...Cache[T]) *ChainCache[T] {
 	return chain
 }
 
+func (c *ChainCache[T]) syncItem(item *chainKeyValue[T]) {
+	for _, cache := range c.caches {
+		if item.id == cache.id {
+			break
+		}
+		_ = cache.SetWithTTL(context.Background(), item.key, item.value, item.ttl)
+	}
+}
+
 // Sync synchronizes a value in available caches, until a given cache layer.
 func (c *ChainCache[T]) Sync() {
 	defer c.wg.Done()
 
-	for item := range c.setChannel {
-		for _, cache := range c.caches {
-			if item.id == cache.id {
-				break
+	for {
+		select {
+		case item := <-c.setChannel:
+			c.syncItem(item)
+		case <-c.done:
+			// 关闭后排空积压任务再退出
+			for {
+				select {
+				case item := <-c.setChannel:
+					c.syncItem(item)
+				default:
+					return
+				}
 			}
-
-			cache.SetWithTTL(context.Background(), item.key, item.value, item.ttl)
 		}
 	}
 }
 
-// Close closes the internal sync channel and waits for pending sync operations to finish.
+// Close 停止后台同步并等待积压任务完成。可安全重复调用；关闭后 Get 仍可用，
+// 只是不再回填。
 func (c *ChainCache[T]) Close() error {
-	close(c.setChannel)
-	c.wg.Wait()
-
+	c.closeOnce.Do(func() {
+		close(c.done)
+		c.wg.Wait()
+	})
 	return nil
 }
 
@@ -93,6 +114,8 @@ func (c *ChainCache[T]) GetWithTTL(ctx context.Context, key any) (T, time.Durati
 			// Set the value back until this cache layer.
 			select {
 			case c.setChannel <- &chainKeyValue[T]{key, obj, ttl, cache.id}:
+			case <-c.done:
+				// 已关闭，跳过回填
 			case <-ctx.Done():
 				// ctx 取消时跳过回填，避免阻塞请求路径
 			}

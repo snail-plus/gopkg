@@ -22,6 +22,8 @@ type LoadableCache[T any] struct {
 	loadFunc   LoadFunction[T]
 	cache      Cache[T]
 	setChannel chan *loadableKeyValue[T]
+	done       chan struct{}
+	closeOnce  sync.Once
 	wg         *sync.WaitGroup
 }
 
@@ -31,6 +33,7 @@ func NewLoadable[T any](loadFunc LoadFunction[T], cache Cache[T]) *LoadableCache
 		loadFunc:   loadFunc,
 		cache:      cache,
 		setChannel: make(chan *loadableKeyValue[T], 10000),
+		done:       make(chan struct{}),
 		wg:         &sync.WaitGroup{},
 	}
 
@@ -44,8 +47,21 @@ func NewLoadable[T any](loadFunc LoadFunction[T], cache Cache[T]) *LoadableCache
 func (c *LoadableCache[T]) Sync() {
 	defer c.wg.Done()
 
-	for item := range c.setChannel {
-		c.Set(context.Background(), item.key, item.value)
+	for {
+		select {
+		case item := <-c.setChannel:
+			_ = c.Set(context.Background(), item.key, item.value)
+		case <-c.done:
+			// 关闭后排空积压任务再退出
+			for {
+				select {
+				case item := <-c.setChannel:
+					_ = c.Set(context.Background(), item.key, item.value)
+				default:
+					return
+				}
+			}
+		}
 	}
 }
 
@@ -67,6 +83,8 @@ func (c *LoadableCache[T]) Get(ctx context.Context, key any) (T, error) {
 	// Then, put it back in cache
 	select {
 	case c.setChannel <- &loadableKeyValue[T]{key, obj}:
+	case <-c.done:
+		// 已关闭，跳过回填
 	case <-ctx.Done():
 		// ctx 取消时跳过回填，避免阻塞请求路径
 	}
@@ -92,6 +110,8 @@ func (c *LoadableCache[T]) GetWithTTL(ctx context.Context, key any) (T, time.Dur
 	// Then, put it back in cache
 	select {
 	case c.setChannel <- &loadableKeyValue[T]{key, obj}:
+	case <-c.done:
+		// 已关闭，跳过回填
 	case <-ctx.Done():
 		// ctx 取消时跳过回填，避免阻塞请求路径
 	}
@@ -124,10 +144,11 @@ func (c *LoadableCache[T]) Wait(ctx context.Context) {
 	c.cache.Wait(ctx)
 }
 
-// Close closes the setChannel and waits for all operations to finish.
+// Close 停止后台回填并等待积压任务完成，可安全重复调用。
 func (c *LoadableCache[T]) Close() error {
-	close(c.setChannel)
-	c.wg.Wait()
-
+	c.closeOnce.Do(func() {
+		close(c.done)
+		c.wg.Wait()
+	})
 	return nil
 }

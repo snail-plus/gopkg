@@ -194,12 +194,19 @@ func Infof(format string, args ...any) {
 	std.Infof(format, args...)
 }
 
-func ErrorS(err error, format string, args ...any) {
-	std.Errorf(err.Error()+": "+format, args...)
+// ErrorS 以结构化方式记录错误。err 为 nil 时按普通消息记录，不会 panic。
+// keyvals 为 klog 风格的 key/value 对。
+func ErrorS(err error, msg string, keyvals ...any) {
+	fields := fieldsFromKeyvals(keyvals...)
+	if err != nil {
+		fields = append([]Field{zap.Error(err)}, fields...)
+	}
+	std.z.Error(msg, fields...)
 }
 
-func InfoS(format string, args ...any) {
-	std.Infof(format, args...)
+// InfoS 以结构化方式记录消息，keyvals 为 klog 风格的 key/value 对。
+func InfoS(msg string, keyvals ...any) {
+	std.z.Info(msg, fieldsFromKeyvals(keyvals...)...)
 }
 
 func (l *zapLogger) Infof(msg string, keyvals ...any) {

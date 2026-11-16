@@ -2,6 +2,10 @@ package db
 
 import (
 	"context"
+	"fmt"
+	"regexp"
+	"strings"
+
 	"gorm.io/gorm"
 	"gorm.io/gorm/schema"
 )
@@ -19,6 +23,8 @@ type BaseRepo[T schema.Tabler] interface {
 	Delete(ctx context.Context, value *T) error
 	Save(ctx context.Context, value *T) error
 	SaveBatch(ctx context.Context, values []*T) error                                         // 保存数据
+	// CustomUpdate/CustomQuery/CustomCount 执行原生 SQL：必须通过 args 占位符传参，
+	// 禁止把外部输入拼接进 sql 字符串，否则会造成 SQL 注入。
 	CustomUpdate(ctx context.Context, sql string, args ...interface{}) error                  // 执行sql
 	CustomQuery(ctx context.Context, sql string, dest interface{}, args ...interface{}) error // 执行查询sql
 	CustomCount(ctx context.Context, sql string, args ...interface{}) (int64, error)
@@ -55,6 +61,30 @@ func (h *BaseRepoImpl[T]) getDB(ctx context.Context) *gorm.DB {
 	return h.db
 }
 
+// safeOrderPattern 限制字符串形式的排序子句只能是列名及可选的 ASC/DESC，
+// 防止外部输入被直接拼进 ORDER BY 造成 SQL 注入。
+var safeOrderPattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*(\s+(?i:asc|desc))?(\s*,\s*[A-Za-z_][A-Za-z0-9_]*(\s+(?i:asc|desc))?)*$`)
+
+// normalizeOrder 校验字符串排序子句。非字符串类型（如 gorm/clause.OrderBy）
+// 由调用方负责安全构造，直接透传。
+func normalizeOrder(order any) (any, error) {
+	if order == nil {
+		return nil, nil
+	}
+	s, ok := order.(string)
+	if !ok {
+		return order, nil
+	}
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil, nil
+	}
+	if !safeOrderPattern.MatchString(s) {
+		return nil, fmt.Errorf("unsafe order clause: %q", s)
+	}
+	return s, nil
+}
+
 // NewBaseRepo DB通用操作结构体初始化
 func NewBaseRepo[T schema.Tabler](db *gorm.DB) BaseRepo[T] {
 	return &BaseRepoImpl[T]{db: db}
@@ -70,21 +100,25 @@ func (h *BaseRepoImpl[T]) Get(ctx context.Context, id int) (*T, error) {
 	return &result, nil
 }
 
+// QueryList 查询列表。condition 建议使用带 ? 占位符的字符串并配合 args 传参，
+// order 为字符串时仅允许"列名 [ASC|DESC]"形式，防止 SQL 注入。
 func (h *BaseRepoImpl[T]) QueryList(ctx context.Context, condition any, order any, args ...interface{}) ([]*T, error) {
 	var data []*T
-	var err error
 
 	db := h.getDB(ctx).WithContext(ctx).Model(new(T))
 	if condition != nil {
 		db = db.Where(condition, args...)
 	}
 
-	if order != nil {
-		db = db.Order(order)
+	safeOrder, err := normalizeOrder(order)
+	if err != nil {
+		return nil, err
+	}
+	if safeOrder != nil {
+		db = db.Order(safeOrder)
 	}
 
-	err = db.Find(&data).Error
-	return data, err
+	return data, db.Find(&data).Error
 }
 
 func (h *BaseRepoImpl[T]) GetOne(ctx context.Context, condition any, args ...interface{}) (*T, error) {
@@ -105,6 +139,10 @@ func (h *BaseRepoImpl[T]) List(ctx context.Context, condition any, page, pageSiz
 	if order == nil {
 		order = "id desc"
 	}
+	safeOrder, err := normalizeOrder(order)
+	if err != nil {
+		return 0, nil, err
+	}
 
 	if condition == nil {
 		err = h.getDB(ctx).WithContext(ctx).Model(new(T)).Count(&count).Error
@@ -112,7 +150,7 @@ func (h *BaseRepoImpl[T]) List(ctx context.Context, condition any, page, pageSiz
 			return 0, nil, err
 		}
 
-		err = h.getDB(ctx).WithContext(ctx).Limit(pageSize).Offset((page - 1) * pageSize).Order(order).Find(&data).Error
+		err = h.getDB(ctx).WithContext(ctx).Limit(pageSize).Offset((page - 1) * pageSize).Order(safeOrder).Find(&data).Error
 		return count, data, err
 	} else {
 		err = h.getDB(ctx).WithContext(ctx).Model(new(T)).Where(condition, args...).Count(&count).Error
@@ -120,7 +158,7 @@ func (h *BaseRepoImpl[T]) List(ctx context.Context, condition any, page, pageSiz
 			return 0, nil, err
 		}
 
-		err = h.getDB(ctx).WithContext(ctx).Limit(pageSize).Offset((page-1)*pageSize).Where(condition, args...).Order(order).Find(&data).Error
+		err = h.getDB(ctx).WithContext(ctx).Limit(pageSize).Offset((page-1)*pageSize).Where(condition, args...).Order(safeOrder).Find(&data).Error
 		return count, data, err
 	}
 

@@ -32,7 +32,9 @@ func (fs *FileSource) init() {
 	go func() {
 		file, err := os.Open(fs.fileName)
 		if err != nil {
-			log.Fatalf("FileSource failed to open the file %s", fs.fileName)
+			log.Printf("FileSource failed to open the file %s: %v", fs.fileName, err)
+			close(fs.in)
+			return
 		}
 		defer file.Close()
 		reader := bufio.NewReader(file)
@@ -86,13 +88,14 @@ func (fs *FileSink) init() {
 	go func() {
 		file, err := os.OpenFile(fs.fileName, os.O_CREATE|os.O_WRONLY, 0o600)
 		if err != nil {
-			log.Fatalf("FileSink failed to open the file %s", fs.fileName)
+			log.Printf("FileSink failed to open the file %s: %v", fs.fileName, err)
+			return
 		}
 		defer file.Close()
 		for elem := range fs.in {
-			_, err = file.WriteString(elem.(string))
-			if err != nil {
-				log.Fatalf("FileSink failed to write to the file %s", fs.fileName)
+			if _, err = file.WriteString(elem.(string)); err != nil {
+				log.Printf("FileSink failed to write to the file %s: %v", fs.fileName, err)
+				return
 			}
 		}
 	}()

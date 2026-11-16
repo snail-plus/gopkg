@@ -3,6 +3,7 @@
 package options
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/spf13/pflag"
@@ -33,7 +34,7 @@ func NewMySQLOptions() *MySQLOptions {
 	return &MySQLOptions{
 		Host:                  "127.0.0.1:3306",
 		Username:              "onex",
-		Password:              "onex(#)666",
+		Password:              "",
 		Database:              "onex",
 		MaxIdleConnections:    100,
 		MaxOpenConnections:    100,
@@ -46,6 +47,19 @@ func NewMySQLOptions() *MySQLOptions {
 // Validate verifies flags passed to MySQLOptions.
 func (o *MySQLOptions) Validate() []error {
 	errs := []error{}
+
+	if o.Host == "" {
+		errs = append(errs, fmt.Errorf("--db.host can not be empty"))
+	}
+	if o.Username == "" {
+		errs = append(errs, fmt.Errorf("--db.username can not be empty"))
+	}
+	if o.Password == "" {
+		errs = append(errs, fmt.Errorf("--db.password can not be empty"))
+	}
+	if o.Database == "" {
+		errs = append(errs, fmt.Errorf("--db.database can not be empty"))
+	}
 
 	return errs
 }

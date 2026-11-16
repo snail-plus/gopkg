@@ -4,7 +4,9 @@ package jwt
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -17,9 +19,6 @@ import (
 const (
 	// reason holds the error reason.
 	reason string = "Unauthorized"
-
-	// defaultKey holds the default key used to sign a jwt token.
-	defaultKey = "onex(#)666"
 )
 
 var (
@@ -39,17 +38,22 @@ var (
 	MessageSignTokenFailed        = &goi18n.Message{ID: "jwt.token.sign.failed", Other: ErrSignTokenFailed.Error()}
 )
 
+// randomSigningKey 生成一个随机的默认签名密钥。未显式配置密钥时，用它代替
+// 硬编码密钥，避免任何人都可用公开密钥伪造 token。多实例部署时应显式配置
+// 同一个 signingKey，否则各实例签发的 token 互不通用。
+func randomSigningKey() []byte {
+	key := make([]byte, 32)
+	if _, err := rand.Read(key); err != nil {
+		panic(fmt.Sprintf("jwt: generate random signing key: %v", err))
+	}
+	return key
+}
+
 var defaultOptions = options{
 	tokenType:     "Bearer",
 	expired:       2 * time.Hour,
 	signingMethod: jwt.SigningMethodHS256,
-	signingKey:    []byte(defaultKey),
-	keyfunc: func(t *jwt.Token) (any, error) {
-		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, ErrTokenInvalid
-		}
-		return []byte(defaultKey), nil
-	},
+	signingKey:    randomSigningKey(),
 }
 
 type options struct {
@@ -113,6 +117,17 @@ func New(store Storer, opts ...Option) *JWTAuth {
 	for _, opt := range opts {
 		opt(&o)
 	}
+	// 未自定义 keyfunc 时，基于最终生效的 signingKey 构建验签回调，
+	// 确保签名与验签使用同一个密钥（WithSigningKey 因此真正生效）。
+	if o.keyfunc == nil {
+		key := o.signingKey
+		o.keyfunc = func(t *jwt.Token) (any, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, ErrTokenInvalid
+			}
+			return key, nil
+		}
+	}
 
 	return &JWTAuth{opts: &o, store: store}
 }
@@ -122,6 +137,8 @@ type JWTAuth struct {
 	opts  *options
 	store Storer
 }
+
+var _ authn.Authenticator = (*JWTAuth)(nil)
 
 type TokenType string
 
@@ -193,9 +210,10 @@ func (a *JWTAuth) Sign(ctx context.Context, userID string, ext ...map[string]any
 	}, nil
 }
 
-// parseToken is used to parse the input refreshToken.
-func (a *JWTAuth) parseToken(ctx context.Context, refreshToken string) (*jwt.RegisteredClaims, error) {
-	token, err := jwt.ParseWithClaims(refreshToken, &jwt.RegisteredClaims{}, a.opts.keyfunc)
+// parseToken 解析并校验 token。expected 指定期望的 token 类型（AccessToken
+// 或 RefreshToken），用于防止 access token 被当作 refresh token 使用。
+func (a *JWTAuth) parseToken(ctx context.Context, tokenStr string, expected TokenType) (*jwt.RegisteredClaims, error) {
+	token, err := jwt.ParseWithClaims(tokenStr, &jwt.RegisteredClaims{}, a.opts.keyfunc)
 	if err != nil {
 
 		if errors.Is(err, jwt.ErrTokenMalformed) {
@@ -221,6 +239,11 @@ func (a *JWTAuth) parseToken(ctx context.Context, refreshToken string) (*jwt.Reg
 		return nil, errors.New(i18n.FromContext(ctx).LocalizeT(MessageUnSupportSigningMethod))
 	}
 
+	actual, ok := token.Header["tokenType"].(string)
+	if !ok || actual != string(expected) {
+		return nil, errors.New(i18n.FromContext(ctx).LocalizeT(MessageTokenInvalid))
+	}
+
 	return token.Claims.(*jwt.RegisteredClaims), nil
 }
 
@@ -233,7 +256,7 @@ func (a *JWTAuth) callStore(fn func(Storer) error) error {
 
 // Destroy is used to destroy a token.
 func (a *JWTAuth) Destroy(ctx context.Context, refreshToken string) error {
-	claims, err := a.parseToken(ctx, refreshToken)
+	claims, err := a.parseToken(ctx, refreshToken, RefreshToken)
 	if err != nil {
 		return err
 	}
@@ -252,7 +275,7 @@ func (a *JWTAuth) ParseClaims(ctx context.Context, refreshToken string) (*jwt.Re
 		return nil, errors.New(i18n.FromContext(ctx).LocalizeT(MessageTokenInvalid))
 	}
 
-	claims, err := a.parseToken(ctx, refreshToken)
+	claims, err := a.parseToken(ctx, refreshToken, RefreshToken)
 	if err != nil {
 		return nil, err
 	}

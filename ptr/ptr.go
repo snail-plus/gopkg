@@ -1,20 +1,25 @@
 package ptr
 
 import (
-	"fmt"
 	"reflect"
 )
 
+// AllPtrFieldsNil 判断 obj 中所有指针字段是否均为 nil。
+// nil、非结构体输入以及无字段类型均视为"没有非空指针字段"，返回 true；
+// 不再对非法输入 panic。
 func AllPtrFieldsNil(obj interface{}) bool {
 	v := reflect.ValueOf(obj)
 	if !v.IsValid() {
-		panic(fmt.Sprintf("reflect.ValueOf() produced a non-valid Value for %#v", obj))
+		return true
 	}
 	if v.Kind() == reflect.Ptr {
 		if v.IsNil() {
 			return true
 		}
 		v = v.Elem()
+	}
+	if v.Kind() != reflect.Struct {
+		return true
 	}
 	for i := 0; i < v.NumField(); i++ {
 		if v.Field(i).Kind() == reflect.Ptr && !v.Field(i).IsNil() {

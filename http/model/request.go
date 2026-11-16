@@ -19,5 +19,9 @@ func (r *PageRequest) Offset() int {
 	if pageNum < 1 {
 		pageNum = 1
 	}
-	return (pageNum - 1) * r.PageSize
+	pageSize := r.PageSize
+	if pageSize < 0 {
+		pageSize = 0
+	}
+	return (pageNum - 1) * pageSize
 }

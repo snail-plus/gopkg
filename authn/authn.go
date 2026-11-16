@@ -27,13 +27,13 @@ type IToken interface {
 // Authenticator defines methods used for token processing.
 type Authenticator interface {
 	// Sign is used to generate a token.
-	Sign(ctx context.Context, userID string) (IToken, error)
+	Sign(ctx context.Context, userID string, ext ...map[string]any) (IToken, error)
 
 	// Destroy is used to destroy a token.
-	Destroy(ctx context.Context, accessToken string) error
+	Destroy(ctx context.Context, refreshToken string) error
 
 	// ParseClaims parse the token and return the claims.
-	ParseClaims(ctx context.Context, accessToken string) (*jwt.RegisteredClaims, error)
+	ParseClaims(ctx context.Context, refreshToken string) (*jwt.RegisteredClaims, error)
 
 	// Release used to release the requested resources.
 	Release() error

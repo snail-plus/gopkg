@@ -8,8 +8,6 @@ import (
 	"time"
 
 	"github.com/dgraph-io/ristretto"
-
-	"github.com/snail-plus/gopkg/cache/store"
 )
 
 // L2Cache represents a two-level cache configuration.
@@ -50,27 +48,27 @@ func (c *L2Cache[T]) Get(ctx context.Context, key any) (T, error) {
 	return value, err
 }
 
-// GetWithTTL returns the obj stored in cache and its corresponding TTL, also a bool that is true if the
-// item was found and is not expired.
+// GetWithTTL returns the obj stored in cache and its corresponding TTL.
+// 本地缓存未命中时回源远程缓存，并回填本地，使 L2 两级缓存真正生效。
 func (c *L2Cache[T]) GetWithTTL(ctx context.Context, key any) (T, time.Duration, error) {
 	if !c.opts.Disable {
-		ttl, found := c.local.GetTTL(keyFunc(key))
-		if !found {
-			return *new(T), 0, store.ErrKeyNotFound
+		cacheKey := keyFunc(key)
+		if ttl, found := c.local.GetTTL(cacheKey); found {
+			if raw, ok := c.local.Get(cacheKey); ok {
+				// ristretto 存储的是 any，类型不匹配时按未命中处理并回源
+				if value, ok := raw.(T); ok {
+					return value, ttl, nil
+				}
+			}
 		}
 
-		raw, found := c.local.Get(keyFunc(key))
-		if !found {
-			return *new(T), 0, store.ErrKeyNotFound
+		value, remoteTTL, err := c.remote.GetWithTTL(ctx, key)
+		if err != nil {
+			return *new(T), 0, err
 		}
-
-		// ristretto 存储的是 any，类型不匹配时返回错误而非 panic
-		value, ok := raw.(T)
-		if !ok {
-			return *new(T), 0, fmt.Errorf("local cache value type mismatch: got %T", raw)
-		}
-
-		return value, ttl, nil
+		// 回填本地缓存；回填失败不影响本次读取结果
+		_ = c.local.SetWithTTL(cacheKey, value, 0, remoteTTL)
+		return value, remoteTTL, nil
 	}
 
 	return c.remote.GetWithTTL(ctx, key)

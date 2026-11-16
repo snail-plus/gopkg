@@ -69,6 +69,8 @@ func (o *TLSOptions) TLSConfig() (*tls.Config, error) {
 	}
 
 	tlsConfig := &tls.Config{
+		// 显式设置最低版本，禁用已不安全的 TLS 1.0/1.1
+		MinVersion:         tls.VersionTLS12,
 		InsecureSkipVerify: o.InsecureSkipVerify,
 	}
 

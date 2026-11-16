@@ -306,6 +306,7 @@ func (o *KafkaOptions) GetMechanism() (sasl.Mechanism, error) {
 			return nil, fmt.Errorf("failed initialize kafka mechanism: %w", err)
 		}
 	default:
+		return nil, fmt.Errorf("unsupported kafka SASL mechanism %q", o.SASLMechanism)
 	}
 
 	return mechanism, nil

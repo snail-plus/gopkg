@@ -24,7 +24,7 @@ func (t *tokenInfo) GetToken() string {
 	return t.Token
 }
 func (t *tokenInfo) GetRefreshToken() string {
-	return t.Token
+	return t.RefreshToken
 }
 
 func (t *tokenInfo) GetTokenType() string {

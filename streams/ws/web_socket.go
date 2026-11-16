@@ -55,6 +55,13 @@ func NewWebSocketSourceWithDialer(ctx context.Context, url string, dialer *webso
 func (wsock *WebSocketSource) init() {
 	sigchan := make(chan os.Signal, 1)
 	signal.Notify(sigchan, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(sigchan)
+
+	defer func() {
+		log.Print("Closing WebSocketSource connection")
+		close(wsock.out)
+		_ = wsock.connection.Close()
+	}()
 
 loop:
 	for {
@@ -69,23 +76,21 @@ loop:
 			t, msg, err := wsock.connection.ReadMessage()
 			if err != nil {
 				log.Printf("Error reading WebSocket message: %s", err)
-			} else {
-				wsock.out <- Message{
-					MsgType: t,
-					Payload: msg,
-				}
+				break loop
+			}
 
-				// exit loop on CloseMessage
-				if t == websocket.CloseMessage {
-					break loop
-				}
+			select {
+			case wsock.out <- Message{MsgType: t, Payload: msg}:
+			case <-wsock.ctx.Done():
+				break loop
+			}
+
+			// exit loop on CloseMessage
+			if t == websocket.CloseMessage {
+				break loop
 			}
 		}
 	}
-
-	log.Print("Closing WebSocketSource connection")
-	close(wsock.out)
-	wsock.connection.Close()
 }
 
 // Via streams data through the given flow.
@@ -130,29 +135,35 @@ func NewWebSocketSinkWithDialer(ctx context.Context, url string, dialer *websock
 
 // init starts the main loop.
 func (wsock *WebSocketSink) init() {
-	for msg := range wsock.in {
-		var err error
-		switch m := msg.(type) {
-		case Message:
-			err = wsock.connection.WriteMessage(m.MsgType, m.Payload)
+	defer func() {
+		log.Print("Closing WebSocketSink connection")
+		_ = wsock.connection.Close()
+	}()
 
-		case string:
-			err = wsock.connection.WriteMessage(websocket.TextMessage, []byte(m))
-
-		case []byte:
-			err = wsock.connection.WriteMessage(websocket.BinaryMessage, m)
-
-		default:
-			log.Printf("WebSocketSink Unsupported message type %v", m)
-		}
-
-		if err != nil {
-			log.Printf("Error processing WebSocket message: %s", err)
+	for {
+		select {
+		case <-wsock.ctx.Done():
+			return
+		case msg, ok := <-wsock.in:
+			if !ok {
+				return
+			}
+			var err error
+			switch m := msg.(type) {
+			case Message:
+				err = wsock.connection.WriteMessage(m.MsgType, m.Payload)
+			case string:
+				err = wsock.connection.WriteMessage(websocket.TextMessage, []byte(m))
+			case []byte:
+				err = wsock.connection.WriteMessage(websocket.BinaryMessage, m)
+			default:
+				log.Printf("WebSocketSink Unsupported message type %v", m)
+			}
+			if err != nil {
+				log.Printf("Error processing WebSocket message: %s", err)
+			}
 		}
 	}
-
-	log.Print("Closing WebSocketSink connection")
-	wsock.connection.Close()
 }
 
 // In returns an input channel for receiving data.

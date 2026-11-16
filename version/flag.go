@@ -6,7 +6,6 @@ package version
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 
 	flag "github.com/spf13/pflag"
@@ -79,14 +78,15 @@ func AddFlags(fs *flag.FlagSet) {
 	fs.AddFlag(flag.Lookup(versionFlagName))
 }
 
-// PrintAndExitIfRequested will check if the -version flag was passed
-// and, if so, print the version and exit.
-func PrintAndExitIfRequested(appName string) {
+// PrintVersionIfRequested 检查是否传入 --version，若传入则打印版本并返回 true。
+// 不自行调用 os.Exit，由调用方决定进程退出行为。
+func PrintVersionIfRequested(appName string) bool {
 	if *versionFlag == VersionRaw {
 		fmt.Printf("%s\n", Get().Text())
-		os.Exit(0)
+		return true
 	} else if *versionFlag == VersionTrue {
 		fmt.Printf("%s %s\n", appName, Get().GitVersion)
-		os.Exit(0)
+		return true
 	}
+	return false
 }

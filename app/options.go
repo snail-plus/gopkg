@@ -3,12 +3,13 @@
 package app
 
 import (
+	"errors"
 	"fmt"
-	"github.com/snail-plus/gopkg/util/homedir"
 	"path/filepath"
 	"strings"
 
 	"github.com/snail-plus/gopkg/log"
+	"github.com/snail-plus/gopkg/util/homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -18,13 +19,29 @@ const configFlagName = "config"
 
 // CliOptions abstracts configuration options for reading parameters from the
 // command line.
-type CliOptions interface {
+//
+// 为兼容 options 包中已有的 Validate() []error 实现（见 options.IOptions），
+// 这里不强制 Validate 的具体签名，运行时支持以下组合：
+//   - 可选 Complete() error，加 Validate() error
+//   - Validate() []error（Complete 可选）
+type CliOptions interface{}
 
-	// Complete completes all the required options.
-	Complete() error
+func completeOptions(opts CliOptions) error {
+	if c, ok := opts.(interface{ Complete() error }); ok {
+		return c.Complete()
+	}
+	return nil
+}
 
-	// Validate validates all the required options.
-	Validate() error
+func validateOptions(opts CliOptions) error {
+	switch v := opts.(type) {
+	case interface{ Validate() error }:
+		return v.Validate()
+	case interface{ Validate() []error }:
+		return errors.Join(v.Validate()...)
+	default:
+		return nil
+	}
 }
 
 var cfgFile string
@@ -68,9 +85,32 @@ func AddConfigFlag(fs *pflag.FlagSet, name string) {
 	})
 }
 
+// sensitiveConfigKey 判断配置项是否含敏感信息（口令、密钥、令牌等）。
+func sensitiveConfigKey(key string) bool {
+	lower := strings.ToLower(key)
+	for _, part := range []string{"password", "passwd", "secret", "token", "credential", "private-key"} {
+		if strings.Contains(lower, part) {
+			return true
+		}
+	}
+	for _, seg := range strings.FieldsFunc(lower, func(r rune) bool {
+		return r == '.' || r == '-' || r == '_'
+	}) {
+		if seg == "key" {
+			return true
+		}
+	}
+	return false
+}
+
+// PrintConfig 以 debug 级别打印配置，敏感项以 *** 代替，避免口令/密钥落盘。
 func PrintConfig() {
 	for _, key := range viper.AllKeys() {
-		log.Debugw(fmt.Sprintf("CFG: %s=%v", key, viper.Get(key)))
+		value := any("***")
+		if !sensitiveConfigKey(key) {
+			value = viper.Get(key)
+		}
+		log.Debugw(fmt.Sprintf("CFG: %s=%v", key, value))
 	}
 }
 
