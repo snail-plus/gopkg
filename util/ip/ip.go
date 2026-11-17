@@ -76,6 +76,35 @@ func normalizeIP(ip string) string {
 
 type IpFilter func(net.Interface, *net.IPNet) bool
 
+func getLocalAddrs(filter func(name string) bool) ([]net.IPNet, error) {
+	netInterfaces, err := net.Interfaces()
+	if err != nil {
+		return nil, err
+	}
+
+	var addresses []net.IPNet
+
+	for i := 0; i < len(netInterfaces); i++ {
+		if (netInterfaces[i].Flags & net.FlagUp) == 0 {
+			continue
+		}
+		if filter != nil && filter(netInterfaces[i].Name) {
+			continue
+		}
+		addrs, _ := netInterfaces[i].Addrs()
+
+		for _, address := range addrs {
+			if ipnet, ok := address.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+				if ipnet.IP.To4() == nil {
+					continue
+				}
+				addresses = append(addresses, *ipnet)
+			}
+		}
+	}
+	return addresses, nil
+}
+
 // GetLocalIps 获取局域网ip地址
 func GetLocalIps(filter IpFilter) []string {
 	netInterfaces, err := net.Interfaces()
@@ -106,6 +135,26 @@ func GetLocalIps(filter IpFilter) []string {
 
 	}
 	return ips
+}
+
+func isContainerInterface(name string) bool {
+	n := strings.ToLower(strings.TrimSpace(name))
+	return strings.HasPrefix(n, "docker") ||
+		strings.HasPrefix(n, "br-") ||
+		strings.HasPrefix(n, "veth")
+}
+
+func GetLocalNoDockerAddrs() ([]net.IPNet, error) {
+	return getLocalAddrs(isContainerInterface)
+}
+
+func GetLocalNoDockerIps() ([]string, error) {
+	addrs, _ := getLocalAddrs(isContainerInterface)
+	var ips []string
+	for _, addr := range addrs {
+		ips = append(ips, addr.IP.String())
+	}
+	return ips, nil
 }
 
 func GetLocalNoVmIps() []string {
